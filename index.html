@@ -1,0 +1,3396 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#3D6642">
+<title>PsychNote AI</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --green:#3D6642;--green-l:#5A8860;--green-ll:#B8D4BB;--green-bg:#F0F5F0;
+  --warm:#A8682C;--warm-bg:#FDF5EE;
+  --bg:#F3F0EB;--white:#fff;
+  --text:#1A1410;--muted:#7A6A58;--border:#DDD3C4;
+  --live:#CC3333;--purple:#6644AA;--blue:#2255AA;
+  --r:12px;
+}
+[data-theme="dark"]{
+  --green:#72BC78;--green-l:#5A9C60;--green-ll:#2A4A2E;--green-bg:#1A2A1C;
+  --warm:#D4875A;--warm-bg:#2A1E14;
+  --bg:#111A12;--white:#1C2A1E;
+  --text:#E4EEE5;--muted:#7A9A7E;--border:#2A3C2C;
+  --live:#FF6666;--purple:#A882D4;--blue:#5AA0D4;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;transition:background .3s,color .3s}
+*{transition:background-color .2s,border-color .2s,color .15s}
+.notransition,.notransition *{transition:none!important}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* ── VIEWS (only one visible at a time) ── */
+.view{display:none;flex:1;flex-direction:column;overflow:hidden;height:100%}
+.view.show{display:flex}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--green);padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));display:flex;align-items:center;gap:10px;flex-shrink:0}
+.topbar h1{flex:1;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#fff}
+.topbar h1 em{font-style:italic;font-weight:400;opacity:.75}
+.topbar small{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.1em;display:block;margin-top:1px}
+.tbtn{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;flex-shrink:0;transition:.15s}
+.tbtn:hover{background:rgba(255,255,255,.25)}
+
+/* ── SCROLL AREA ── */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* ── SETUP VIEW ── */
+#v-setup{background:var(--bg);overflow-y:auto}
+.setup-inner{max-width:520px;margin:0 auto;padding:32px 20px 60px}
+.setup-logo{text-align:center;margin-bottom:28px}
+.setup-logo .ico{font-size:52px}
+.setup-logo h1{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;margin-top:8px}
+.setup-logo h1 em{color:var(--green-l);font-style:italic;font-weight:400}
+.setup-logo p{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.6}
+.box{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px}
+.box h2{font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--green);margin-bottom:6px}
+.box p{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+label.fl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:5px}
+input.fi{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;margin-bottom:10px;transition:.2s}
+input.fi:focus{border-color:var(--green-l)}
+.step-hint{background:var(--green-bg);border-left:3px solid var(--green-l);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--green);margin-bottom:8px;line-height:1.6}
+.step-hint a{color:var(--green);font-weight:600}
+.sql{background:#1a1a1a;color:#7ec882;border-radius:8px;padding:12px;font-family:monospace;font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre;margin:8px 0}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:11px;border:none;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:.2s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 3px 16px rgba(61,102,66,.3)}
+.btn-green:hover{background:var(--green-l)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:8px}
+.btn-outline:hover{border-color:var(--green-l);color:var(--green)}
+.btn-sm{padding:8px 14px;font-size:12px;border-radius:8px;width:auto}
+
+/* ── DESKTOP SHELL ── */
+.shell{flex:1;display:flex;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;min-width:240px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:767px){.sidebar{display:none}.shell{flex-direction:column}}
+.sb-head{background:var(--green);padding:16px;display:flex;align-items:center;justify-content:space-between}
+.sb-head span{font-family:'Cormorant Garamond',serif;font-size:16px;color:#fff;font-weight:600}
+.sb-head span em{font-style:italic;font-weight:400;opacity:.7}
+.sb-list{flex:1;overflow-y:auto;padding:8px}
+.sb-item{padding:9px 11px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:.15s;margin-bottom:2px}
+.sb-item:hover{background:var(--bg)}
+.sb-item.active{background:var(--green-bg);border:1px solid var(--green-ll)}
+.sb-av{width:28px;height:28px;border-radius:7px;background:var(--green-ll);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:11px;font-weight:700;color:var(--green);flex-shrink:0}
+.sb-item.active .sb-av{background:var(--green);color:#fff}
+.sb-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-sub{font-size:11px;color:var(--muted)}
+.sb-foot{padding:10px 8px;border-top:1px solid var(--border);display:flex;gap:6px}
+.sb-foot button{flex:1;padding:8px 6px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.15s}
+.sb-foot button:hover{border-color:var(--green-l);color:var(--green)}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── CLIENT LIST ── */
+.client-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.15s;margin-bottom:8px}
+.client-card:hover{border-color:var(--green-ll);background:var(--green-bg)}
+.client-card:active{transform:scale(.99)}
+.c-av{width:44px;height:44px;border-radius:12px;background:var(--green-ll);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--green);flex-shrink:0}
+.c-name{font-size:15px;font-weight:600}
+.c-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.c-sessions{background:var(--green-bg);color:var(--green);font-size:12px;padding:3px 10px;border-radius:20px;border:1px solid var(--green-ll);flex-shrink:0}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;text-align:center;gap:8px}
+.empty .ico{font-size:48px}
+.empty h3{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--green)}
+.empty p{font-size:13px;color:var(--muted);line-height:1.6;max-width:240px}
+.fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;background:var(--green);border:none;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(61,102,66,.35);z-index:30;transition:.2s}
+.fab:active{transform:scale(.9)}
+@media(min-width:768px){.fab{display:none}}
+
+/* ── CLIENT DETAIL ── */
+.c-header{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.c-header-av{width:52px;height:52px;border-radius:14px;background:var(--green-ll);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--green);flex-shrink:0}
+.c-header-name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600}
+.c-header-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.action-row{display:flex;gap:8px;margin-bottom:12px}
+.action-row .btn{flex:1;padding:12px}
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-family:'Cormorant Garamond',serif;margin-bottom:8px;padding:4px 0}
+.sess-item{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;cursor:pointer;transition:.15s;margin-bottom:8px}
+.sess-item:hover{border-color:var(--green-ll);background:var(--green-bg)}
+.sess-date{font-size:13px;font-weight:600}
+.sess-preview{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.tag{font-size:11px;padding:2px 9px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-ll)}
+
+/* ── SESSION ── */
+.stabs{display:flex;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0}
+.stab{flex:1;padding:11px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;text-transform:uppercase;letter-spacing:.05em}
+.stab.on{color:var(--green);border-bottom-color:var(--green)}
+.spanel{display:none;flex:1;flex-direction:column;overflow:hidden}
+.spanel.on{display:flex}
+
+/* transcript tab */
+.tx-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;padding-bottom:130px}
+.tx-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.card-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-family:'Cormorant Garamond',serif;margin-bottom:8px}
+.tx-text{font-size:14px;line-height:1.85;color:var(--text);max-height:240px;overflow-y:auto}
+.tx-interim{color:var(--muted);font-style:italic}
+.tx-empty{font-size:13px;color:var(--muted);font-style:italic;line-height:1.7}
+.wave{display:flex;align-items:center;gap:3px;height:24px;justify-content:center;margin-bottom:4px}
+.wb{width:3px;border-radius:2px;background:var(--green-l)}
+@keyframes wv{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+
+/* notes tab */
+.notes-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;padding-bottom:130px}
+.note-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px;border-left:3px solid var(--green)}
+.note-card.warm{border-left-color:var(--warm)}
+.note-card.purple{border-left-color:var(--purple)}
+.note-card.blue{border-left-color:var(--blue)}
+.note-card.muted{border-left-color:var(--muted)}
+.note-text{font-size:14px;line-height:1.7}
+.note-sub{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6;font-style:italic}
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.pill{padding:3px 10px;border-radius:20px;font-size:12px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-ll)}
+.pill.p{background:#f0ebfa;color:var(--purple);border-color:#c8b8ea}
+.pill.w{background:var(--warm-bg);color:var(--warm);border-color:#e8c8a0}
+.belief{font-size:13px;padding:7px 10px;background:var(--warm-bg);border-radius:8px;border-left:2px solid var(--warm);margin-bottom:5px;line-height:1.6}
+.srow{display:flex;gap:7px;margin-bottom:5px;font-size:13px;line-height:1.6}
+.snum{color:var(--green);font-weight:600;flex-shrink:0}
+.mood-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.mood-tr{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.mood-f{height:100%;border-radius:3px;transition:width .7s}
+.mood-v{font-size:13px;font-weight:600;min-width:20px}
+
+/* free notes tab */
+.free-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;padding-bottom:20px}
+textarea.ta{width:100%;min-height:140px;padding:12px;border:1px solid var(--border);border-radius:var(--r);font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);resize:vertical;outline:none;line-height:1.75;transition:.2s}
+textarea.ta:focus{border-color:var(--green-l)}
+.organized-box{background:var(--white);border:1px solid var(--green-ll);border-radius:var(--r);padding:14px;font-size:14px;line-height:1.75;white-space:pre-wrap;color:var(--text)}
+
+/* record dock */
+.dock{position:fixed;bottom:0;left:0;right:0;padding:12px 20px;padding-bottom:calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 60%,transparent);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:20}
+@media(min-width:768px){.dock{position:sticky;left:auto;right:auto;width:100%;background:var(--bg);border-top:1px solid var(--border);padding:12px 20px}}
+.dock-row{display:flex;align-items:center;gap:16px}
+.rec-wrap{position:relative}
+.rec-ring{position:absolute;inset:-8px;border-radius:50%;background:rgba(204,51,51,.12);opacity:0}
+.rec-ring.on{animation:ring 1.5s ease-out infinite}
+@keyframes ring{from{transform:scale(1);opacity:.5}to{transform:scale(1.5);opacity:0}}
+.rec-btn{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;z-index:1;transition:.2s}
+.rec-btn.idle{background:var(--green);box-shadow:0 4px 20px rgba(61,102,66,.35)}
+.rec-btn.live{background:var(--live);box-shadow:0 4px 20px rgba(204,51,51,.35)}
+.rec-btn:active{transform:scale(.9)}
+.dock-side{flex:1;display:flex;flex-direction:column;gap:5px}
+.dock-side.right{align-items:flex-start}
+.dock-side.left{align-items:flex-end}
+.wc{font-size:11px;color:var(--muted)}
+.analyze-btn{padding:8px 12px;border-radius:9px;border:none;background:var(--green);color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px}
+.analyze-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+.save-btn{padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:.2s}
+.save-btn:hover{color:var(--green);border-color:var(--green-l)}
+.dock-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.live-pill{display:flex;align-items:center;gap:6px;background:#fef0f0;border:1px solid rgba(204,51,51,.25);border-radius:20px;padding:4px 11px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--live)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.live-dot.on{animation:pulse 1s infinite}
+.live-lbl{font-size:11px;font-weight:600;color:var(--live);letter-spacing:.06em}
+.live-t{font-family:monospace;font-size:12px;color:var(--live)}
+
+/* ── DEEP ANALYSIS ── */
+.deep-section{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:8px}
+.deep-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;font-family:'Cormorant Garamond',serif}
+.deep-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0}
+.deep-btn{padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px}
+.deep-btn:hover{border-color:var(--green-l);color:var(--green)}
+.deep-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.deep-btn:disabled{opacity:.5;cursor:not-allowed}
+.deep-result{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.deep-result-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.deep-result-text{font-size:13px;line-height:1.85;color:var(--text);white-space:pre-wrap}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:.25s}
+.overlay.on{opacity:1;pointer-events:all}
+.sheet{width:100%;background:var(--white);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:.3s cubic-bezier(.32,.72,0,1);max-height:88vh;overflow-y:auto}
+.overlay.on .sheet{transform:none}
+.sh-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.sh-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--green);margin-bottom:16px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:100px;left:16px;right:16px;padding:12px 16px;border-radius:11px;font-size:13px;font-weight:500;z-index:200;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;text-align:center}
+.toast.ok{background:var(--green);color:#fff}
+.toast.err{background:var(--live);color:#fff}
+.toast.show{opacity:1;transform:none}
+
+/* ── SPINNER ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+.spin.dark{border:2px solid var(--border);border-top-color:var(--green)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fadeup{animation:fadeUp .25s ease}
+/* ── HOME DASHBOARD ── */
+.home-scroll{flex:1;overflow-y:auto;padding:20px 20px 40px;display:flex;flex-direction:column;gap:16px;max-width:720px;width:100%;margin:0 auto}
+.home-date{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:2px}
+.home-greet{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;line-height:1.2;color:var(--text)}
+.home-greet em{color:var(--green);font-style:italic}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:500px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-tile{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;display:flex;flex-direction:column;gap:3px;transition:.15s}
+.stat-tile:hover{border-color:var(--green-ll)}
+.stat-tile-icon{font-size:16px;margin-bottom:2px}
+.stat-tile-val{font-size:22px;font-weight:700;color:var(--text);font-family:'Cormorant Garamond',serif;line-height:1}
+.stat-tile-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat-tile-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.home-sec{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.home-sec-head{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.home-sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-family:'Cormorant Garamond',serif}
+.home-sec-link{font-size:11px;color:var(--green);cursor:pointer;font-weight:600}
+.home-sec-link:hover{text-decoration:underline}
+.recent-item{padding:11px 15px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:.15s;border-bottom:1px solid var(--border)}
+.recent-item:last-child{border-bottom:none}
+.recent-item:hover{background:var(--green-bg)}
+.recent-av{width:34px;height:34px;min-width:34px;border-radius:9px;background:var(--green-ll);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:700;color:var(--green)}
+.recent-body{flex:1;min-width:0}
+.recent-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-meta{font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.recent-date{font-size:10px;color:var(--muted)}
+.recent-mood{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qa-btn{padding:14px;border-radius:var(--r);border:1px solid var(--border);background:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:10px;transition:.15s;text-align:left}
+.qa-btn:hover{border-color:var(--green-l);background:var(--green-bg);color:var(--green)}
+.qa-btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.qa-btn.primary:hover{background:var(--green-l);border-color:var(--green-l)}
+.qa-ico{font-size:20px;line-height:1}
+.home-empty{padding:32px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}
+/* Sidebar nav items */
+.sb-nav{padding:6px 8px;border-bottom:1px solid var(--border)}
+.sb-nav-item{padding:8px 10px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--muted);transition:.15s;margin-bottom:2px}
+.sb-nav-item:hover{background:var(--bg);color:var(--text)}
+.sb-nav-item.active{background:var(--green-bg);color:var(--green);border:1px solid var(--green-ll)}
+.sb-nav-ico{font-size:15px;width:20px;text-align:center}
+.sb-sec-label{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:10px 10px 4px;font-family:'Cormorant Garamond',serif}
+
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP ════════════════════════════════════ -->
+<!-- ═══ LOCK SCREEN ══════════════════════════════ -->
+<div id="v-lock" class="view">
+<div class="setup-inner" style="max-width:380px">
+  <div class="setup-logo">
+    <div class="ico">🔒</div>
+    <h1>PsychNote <em>AI</em></h1>
+    <p>Dane są zaszyfrowane. Podaj hasło aby kontynuować.</p>
+  </div>
+  <div class="box">
+    <label class="fl">Hasło szyfrowania</label>
+    <input class="fi" type="password" id="lockPass" placeholder="Wpisz hasło…" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') unlockApp()">
+    <div id="lockErr" style="display:none;font-size:12px;color:var(--live);padding:8px 10px;background:#fef0f0;border-radius:8px;margin-bottom:8px">
+      ❌ Błędne hasło — spróbuj ponownie
+    </div>
+    <button class="btn btn-green" id="lockBtn" onclick="unlockApp()">🔓 Odblokuj</button>
+  </div>
+  <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.7">
+    Jeśli nie pamiętasz hasła, możesz<br>
+    <span onclick="forgotPassword()" style="color:var(--green);cursor:pointer;text-decoration:underline">wyczyścić wszystkie dane i zacząć od nowa</span>
+  </div>
+</div>
+</div>
+
+<div id="v-setup" class="view show">
+<div class="setup-inner">
+  <div class="setup-logo">
+    <div class="ico">🧠</div>
+    <h1>PsychNote <em>AI</em></h1>
+    <p>System zarządzania sesjami terapeutycznymi</p>
+  </div>
+
+  <div class="box">
+    <h2>1. Klucz Anthropic API</h2>
+    <p>Do generowania notatek AI. Zapisywany tylko lokalnie na urządzeniu.</p>
+    <label class="fl">Klucz API *</label>
+    <input class="fi" id="iApiKey" type="password" placeholder="sk-ant-api03-..." autocomplete="off">
+    <div class="step-hint">Pobierz klucz na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Koszt: ~0,25 zł / sesję (model Haiku).</div>
+  </div>
+
+  <div class="box">
+    <h2>2. Supabase — sync między urządzeniami</h2>
+    <p>Opcjonalne. Pozwala używać aplikacji na telefonie i komputerze jednocześnie.</p>
+    <div class="step-hint">1. Wejdź na <a href="https://supabase.com" target="_blank">supabase.com</a> → New project (darmowy)</div>
+    <div class="step-hint">2. SQL Editor → wklej kod → Run<br><button class="btn btn-outline btn-sm" onclick="copySql()" style="margin-top:8px">📋 Kopiuj SQL</button></div>
+    <div class="sql" id="sqlEl">CREATE TABLE IF NOT EXISTS clients (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  age int,
+  issue text,
+  notes text,
+  created_at timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id uuid REFERENCES clients(id) ON DELETE CASCADE,
+  date timestamptz DEFAULT now(),
+  duration_sec int DEFAULT 0,
+  transcript text DEFAULT '',
+  notes jsonb,
+  free_notes text DEFAULT '',
+  organized_notes text DEFAULT '',
+  mood int DEFAULT 5,
+  tags jsonb DEFAULT '[]',
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS guide jsonb DEFAULT '{}';
+CREATE TABLE IF NOT EXISTS app_settings (
+  key text PRIMARY KEY,
+  value text,
+  updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='clients' AND policyname='all') THEN
+    CREATE POLICY "all" ON clients FOR ALL USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='sessions' AND policyname='all') THEN
+    CREATE POLICY "all" ON sessions FOR ALL USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='app_settings' AND policyname='all') THEN
+    CREATE POLICY "all" ON app_settings FOR ALL USING (true);
+  END IF;
+END $$;</div>
+    <div class="step-hint" style="margin-top:10px">3. Settings → API → skopiuj Project URL i anon key poniżej</div>
+    <label class="fl">Supabase URL</label>
+    <input class="fi" id="iSupaUrl" type="text" placeholder="https://xxxx.supabase.co" autocomplete="off">
+    <label class="fl">Supabase Anon Key</label>
+    <input class="fi" id="iSupaKey" type="password" placeholder="eyJhbGci..." autocomplete="off">
+  </div>
+
+  <button class="btn btn-green" id="btnGo" onclick="doSetup()">Zapisz i uruchom →</button>
+  <button class="btn btn-outline" onclick="doSetupLocal()">Użyj tylko lokalnie (bez sync)</button>
+</div>
+</div>
+
+<!-- ═══ APP ══════════════════════════════════════ -->
+<div id="v-app" class="view">
+  <div class="topbar">
+    <h1 id="appTitle">PsychNote <em>AI</em><small>Kartoteka klientów</small></h1>
+    <div id="livePill" class="live-pill" style="display:none">
+      <div class="live-dot on"></div>
+      <span class="live-lbl">LIVE</span>
+      <span class="live-t" id="timerEl">00:00</span>
+    </div>
+    <button class="tbtn" id="backBtn" onclick="goBack()" style="display:none">←</button>
+    <button class="tbtn" id="editBtn" onclick="editClient()" style="display:none" title="Edytuj klienta">✏️</button>
+    <button class="tbtn" id="themeBtn" onclick="toggleTheme()" title="Zmień motyw">🌙</button>
+    <button class="tbtn" id="privacyBtn" onclick="togglePrivacy()" title="Pokaż/ukryj imiona klientów">👁</button>
+    <button class="tbtn" onclick="goSettings()">⚙️</button>
+  </div>
+
+  <div class="shell">
+    <!-- SIDEBAR (desktop only) -->
+    <div class="sidebar" id="sidebar">
+      <div class="sb-head">
+        <span>PsychNote <em>AI</em></span>
+      </div>
+      <div class="sb-nav">
+        <div class="sb-nav-item active" id="sb-home" onclick="showPanel('home')">
+          <span class="sb-nav-ico">🏠</span> Przegląd
+        </div>
+        <div class="sb-nav-item" id="sb-clients-nav" onclick="showPanel('clients');renderClients()">
+          <span class="sb-nav-ico">👥</span> Klienci
+        </div>
+      </div>
+      <div class="sb-sec-label">Klienci</div>
+      <div class="sb-list" id="sbList"></div>
+      <div class="sb-foot">
+        <button onclick="openAddClient()">+ Klient</button>
+        <button onclick="goSettings()">⚙️ Ustaw.</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="mainArea">
+
+      <!-- HOME / DASHBOARD PANEL -->
+      <div id="p-home" class="view show">
+        <div class="home-scroll" id="homeContent"></div>
+        <button class="fab" onclick="openNewSessionPicker()" title="Nowa sesja" style="bottom:calc(24px + env(safe-area-inset-bottom))">🎙</button>
+      </div>
+
+      <!-- CLIENTS PANEL -->
+      <div id="p-clients" class="view">
+        <div style="padding:12px 16px 0">
+          <div style="position:relative">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none">🔍</span>
+            <input type="search" id="searchInput" placeholder="Szukaj klientów, sesji, notatek…"
+              style="width:100%;box-sizing:border-box;padding:9px 12px 9px 34px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--white);color:var(--text);outline:none;font-family:inherit"
+              oninput="clearTimeout(window._searchT);window._searchT=setTimeout(renderClients,250)" autocomplete="off">
+          </div>
+        </div>
+        <div class="scroll" style="padding:8px 16px 16px" id="clientList"></div>
+        <button class="fab" onclick="openAddClient()">+</button>
+      </div>
+
+      <!-- CLIENT DETAIL PANEL -->
+      <div id="p-client" class="view">
+        <div class="scroll" style="padding:16px" id="clientDetail"></div>
+      </div>
+
+      <!-- SESSION PANEL -->
+      <div id="p-session" class="view">
+        <div class="stabs">
+          <div class="stab on" id="st-tx" onclick="switchTab('tx')">🎙 Transkrypt</div>
+          <div class="stab" id="st-notes" onclick="switchTab('notes')">🧠 Notatki AI</div>
+          <div class="stab" id="st-free" onclick="switchTab('free')">📝 Moje notatki</div>
+        </div>
+        <div id="sp-tx" class="spanel on">
+          <div class="tx-area" id="txArea">
+            <div class="wave" id="waveEl" style="display:none">
+              <div class="wb" style="height:4px;animation:wv .7s .00s infinite ease-in-out"></div>
+              <div class="wb" style="height:4px;animation:wv .7s .10s infinite ease-in-out"></div>
+              <div class="wb" style="height:4px;animation:wv .7s .20s infinite ease-in-out"></div>
+              <div class="wb" style="height:4px;animation:wv .7s .30s infinite ease-in-out"></div>
+              <div class="wb" style="height:4px;animation:wv .7s .40s infinite ease-in-out"></div>
+              <div class="wb" style="height:4px;animation:wv .7s .50s infinite ease-in-out"></div>
+              <div class="wb" style="height:4px;animation:wv .7s .60s infinite ease-in-out"></div>
+            </div>
+            <div class="tx-card">
+              <div class="card-label">📝 Transkrypt sesji</div>
+              <div id="txEl" class="tx-empty">Naciśnij 🎙 aby nagrywać.<br><br>Połóż telefon na biurku — mikrofon usłyszy Ciebie i głos klienta z głośników.</div>
+            </div>
+            <div class="tx-card" style="border-left:3px solid var(--blue)">
+              <div class="card-label">💡 Wskazówka</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.65">Ustaw głośność komputera tak, żeby głos klienta był słyszalny w pomieszczeniu. Mikrofon nagrywa obie strony.</div>
+            </div>
+          </div>
+        </div>
+        <div id="sp-notes" class="spanel">
+          <div style="display:none;justify-content:flex-end;padding:8px 0 4px;gap:6px" id="notesToolbar">
+            <button id="editNotesBtn" onclick="toggleNotesEdit()" style="padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer">✏️ Edytuj notatki</button>
+          </div>
+          <div class="notes-area" id="notesArea">
+            <div class="empty">
+              <div class="ico">🌿</div>
+              <h3>Brak notatek</h3>
+              <p>Nagraj sesję, a potem naciśnij "Analizuj" — AI wygeneruje notatki kliniczne.</p>
+            </div>
+          </div>
+        </div>
+        <div id="sp-free" class="spanel">
+          <div class="free-area" id="freeArea">
+            <div style="font-size:13px;color:var(--muted);line-height:1.65;padding:10px 13px;background:var(--white);border-radius:var(--r);border-left:3px solid var(--blue)">
+              💡 Pisz swobodnie — skróty, chaotyczne myśli. AI ułoży to w strukturę kliniczną.
+            </div>
+            <textarea class="ta" id="freeInput" placeholder="np: klient znów wspomniał ojca, płakał, lęk w głosie..." oninput="sessFree=this.value;sessDirty=true;saveNow(true)"></textarea>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline" style="flex:1;padding:11px" onclick="saveFree()">💾 Zapisz</button>
+              <button class="btn btn-green" style="flex:1;padding:11px" id="organizeBtn" onclick="organizeNotes()">🧠 Uporządkuj AI</button>
+            </div>
+            <div id="organizedOut" style="display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div class="card-label">Notatki uporządkowane przez AI</div>
+                <div style="font-size:11px;color:var(--muted)">możesz edytować</div>
+              </div>
+              <textarea class="ta" id="organizedText" style="min-height:180px" oninput="sessOrg=this.value;sessDirty=true;saveNow(true)"></textarea>
+            </div>
+          </div>
+        </div>
+        <!-- DOCK -->
+        <div class="dock">
+          <div class="dock-row">
+            <div class="dock-side left">
+              <div class="wc" id="wcEl">0 słów</div>
+              <button class="analyze-btn" id="analyzeBtn" onclick="doAnalyze()" disabled>🧠 Analizuj</button>
+            </div>
+            <div class="rec-wrap">
+              <div class="rec-ring" id="recRing"></div>
+              <button class="rec-btn idle" id="recBtn" onclick="toggleRec()">🎙</button>
+            </div>
+            <div class="dock-side right">
+              <button class="save-btn" onclick="saveNow()">💾 Zapisz</button>
+              <button class="save-btn" onclick="exportSession(curSessId)" style="color:var(--green)">⬇ Eksport</button>
+              <button class="save-btn" onclick="deleteSessionConfirm()" style="color:var(--live)">🗑 Usuń</button>
+              <div class="wc" id="saveStatus"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="dock-label" id="dockLabel" style="flex:1">Naciśnij aby nagrywać</div>
+            <div style="display:flex;align-items:center;gap:4px" title="Czas trwania sesji (możesz wpisać ręcznie)">
+              <span style="font-size:11px;color:var(--muted)">⏱</span>
+              <input type="number" id="durInput" min="0" max="480" placeholder="min"
+                style="width:52px;padding:3px 6px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit;text-align:center"
+                oninput="const v=Math.min(600,Math.max(0,parseInt(this.value||0)));sessElapsed=v*60;this.value=this.value&&v||''  ;sessDirty=true;saveNow(true)"
+                title="Czas sesji w minutach">
+              <span style="font-size:11px;color:var(--muted)">min</span>
+            </div>
+          </div>
+          <!-- MOOD + TAGS ROW -->
+          <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:12px;padding-top:8px;border-top:1px solid var(--border);margin-top:4px">
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">Nastrój klienta</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:13px">😞</span>
+                <input type="range" id="moodSlider" min="1" max="10" value="5" style="flex:1;accent-color:var(--green);cursor:pointer;height:4px" oninput="updateMoodDisplay()">
+                <span style="font-size:13px">😊</span>
+                <span id="moodVal" style="font-size:14px;font-weight:700;color:var(--green);min-width:24px;text-align:right">5</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">Tagi sesji</div>
+              <div id="tagsDisplay" style="display:flex;flex-wrap:wrap;gap:3px;min-height:4px;margin-bottom:5px"></div>
+              <div style="display:flex;gap:4px">
+                <input type="text" id="tagInput" placeholder="Dodaj tag…" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);outline:none;font-family:inherit" onkeydown="if(event.key==='Enter'){addTag();event.preventDefault()}">
+                <button onclick="addTag()" style="padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--green);font-size:14px;cursor:pointer;font-weight:700;line-height:1">+</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px" id="tagSuggestions"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS PANEL -->
+      <div id="p-settings" class="view">
+        <div class="scroll" style="padding:20px;max-width:600px">
+          <div class="box">
+            <h2>Klucze API</h2>
+            <p>Aktualna konfiguracja</p>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Anthropic: <strong id="sApiKey">—</strong></div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Supabase: <strong id="sSupaStatus">—</strong></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline" onclick="changeKeys()">🔑 Zmień klucze</button>
+              <button class="btn btn-outline" onclick="copyMigrationSql()">📋 SQL migracji Supabase</button>
+            </div>
+          </div>
+          <div class="box">
+            <h2>Motyw</h2>
+            <p>Wybierz jasny lub ciemny wygląd aplikacji.</p>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline" style="flex:1" onclick="applyTheme(false);ls('pn_theme','light')">☀️ Jasny</button>
+              <button class="btn btn-outline" style="flex:1" onclick="applyTheme(true);ls('pn_theme','dark')">🌙 Ciemny</button>
+            </div>
+          </div>
+          <div class="box" style="margin-top:14px">
+            <h2>🔒 Szyfrowanie danych (RODO)</h2>
+            <p>Dane klientów szyfrowane lokalnie hasłem — chroni przed nieuprawnionym dostępem do urządzenia. <strong>Uwaga:</strong> dane synchronizowane z Supabase i kopiami na Drive są w formacie jawnym.</p>
+            <div id="encStatus"></div>
+            <div id="encSetup">
+              <label class="fl" style="margin-top:8px">Hasło szyfrowania</label>
+              <input class="fi" type="password" id="encPass" placeholder="Minimum 8 znaków" autocomplete="new-password">
+              <label class="fl">Potwierdź hasło</label>
+              <input class="fi" type="password" id="encPass2" placeholder="Powtórz hasło" autocomplete="new-password">
+              <button class="btn btn-green" onclick="setupEncryption()">🔒 Włącz szyfrowanie</button>
+            </div>
+            <div id="encActive" style="display:none">
+              <div style="background:var(--green-bg);border:1px solid var(--green-ll);border-radius:9px;padding:10px 13px;font-size:13px;color:var(--green);margin-bottom:10px">✅ Szyfrowanie aktywne — dane są bezpieczne</div>
+              <button class="btn btn-outline" onclick="disableEncryption()">🔓 Wyłącz szyfrowanie</button>
+            </div>
+          </div>
+
+          <div class="box" style="margin-top:14px">
+            <h2>☁️ Backup Google Drive</h2>
+            <p>Kopia zapasowa wszystkich danych na Twoim prywatnym Google Drive. Automatycznie co 7 dni.</p>
+            <div id="driveStatusEl" style="font-size:13px;color:var(--muted);margin-bottom:10px">Nie połączono</div>
+            <label class="fl">Google OAuth Client ID</label>
+            <input class="fi" id="gcid" placeholder="xxx.apps.googleusercontent.com">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.9">
+              W Google Console → OAuth Client wpisz:<br>
+              <span style="color:var(--muted);font-size:11px">Authorized JavaScript origins:</span><br>
+              <strong id="myOrigin" style="color:var(--text);font-family:monospace;font-size:12px;word-break:break-all"></strong>
+              <button onclick="navigator.clipboard.writeText(document.getElementById('myOrigin').textContent).then(()=>toast('Skopiowano!','ok'))" style="margin-left:6px;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--green)">Kopiuj</button><br>
+              <span style="color:var(--green);font-size:11px;font-weight:600">✅ Redirect URIs — NIE potrzebne (używamy popup, nie przekierowania)</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-outline" style="flex:1" onclick="driveAuth()">🔗 Autoryzuj Google</button>
+              <button class="btn btn-green" style="flex:1" id="driveBackupBtn" disabled onclick="driveBackup()">☁️ Backup teraz</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:10px">Ostatni backup: <strong id="driveLastEl">—</strong></div>
+            <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px">
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">🔄 Przywróć dane z backupu</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.55">Wczytaj plik JSON pobrany wcześniej z Google Drive. Zastąpi wszystkie aktualne dane.</p>
+              <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreFromFile(this)">
+              <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">📂 Wczytaj plik backup (.json)</button>
+            </div>
+          </div>
+
+          <div class="box" style="margin-top:14px">
+            <h2>Dane</h2>
+            <p>Usuń wszystkie dane lokalne. <strong>Dane w Supabase zostaną zachowane</strong> — po odświeżeniu wróci synchronizacja.</p>
+            <button class="btn" style="background:#fef0f0;color:var(--live);border:1px solid rgba(204,51,51,.2)" onclick="clearData()">🗑 Wyczyść dane lokalne</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /shell -->
+</div><!-- /v-app -->
+
+<!-- ═══ IMPORT BANNER ════════════════════════════════ -->
+<div id="ov-import" class="overlay" onclick="closeOv(event,'ov-import')">
+<div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-title">📥 Transkrypt z rozszerzenia</div>
+  <p style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.65">Wybierz klienta, do którego przypisać tę sesję. Transkrypt zostanie automatycznie wklejony.</p>
+  <label class="fl">Wybierz klienta</label>
+  <select class="fi" id="importClientSel" style="cursor:pointer"></select>
+  <div id="importPreview" style="font-size:12px;color:var(--muted);background:var(--bg);border-radius:9px;padding:10px;margin:10px 0;max-height:100px;overflow-y:auto;line-height:1.6;font-style:italic"></div>
+  <button class="btn btn-green" onclick="confirmImport()">Utwórz sesję z tym transkryptem</button>
+  <button class="btn btn-outline" style="margin-top:8px" onclick="closeOv(null,'ov-import')">Anuluj</button>
+</div>
+</div>
+
+<!-- PRZEWODNIK KONSULTACJI OVERLAY -->
+<div class="overlay" id="ov-guide" onclick="closeOv(event,'ov-guide')" style="align-items:flex-end">
+  <div onclick="event.stopPropagation()" style="background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:520px;height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 30px rgba(0,0,0,.12)">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:4px;margin:10px auto 0"></div>
+    <div id="guideContent" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-client" onclick="closeOv(event,'ov-client')">
+<div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-title" id="shClientTitle">Nowy klient</div>
+  <label class="fl">Imię / pseudonim *</label>
+  <input class="fi" id="shName" placeholder="np. Klient A">
+  <label class="fl">Rok urodzenia</label>
+  <input class="fi" id="shAge" type="number" placeholder="np. 1990" min="1900">
+  <label class="fl">Powód zgłoszenia</label>
+  <input class="fi" id="shIssue" placeholder="np. depresja, lęk, trudności relacyjne">
+  <label class="fl">Notatki ogólne</label>
+  <textarea class="ta" id="shNotes" style="min-height:80px" placeholder="Historia, wywiad, diagnoza..."></textarea>
+  <button class="btn btn-green" id="shSaveBtn" onclick="saveClient()">Dodaj klienta</button>
+</div>
+</div>
+
+<div class="overlay" id="ov-end" onclick="closeOv(event,'ov-end')">
+<div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-title">Zakończyć sesję?</div>
+  <p style="font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.65">Sesja zostanie zapisana. Możesz do niej wrócić później.</p>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-outline" style="flex:1" onclick="closeOv(null,'ov-end')">Wróć</button>
+    <button class="btn btn-green" style="flex:1" onclick="endSession()">Zakończ i zapisz</button>
+  </div>
+</div>
+</div>
+
+<!-- SESSION PICKER OVERLAY -->
+<div id="ov-newSession" class="overlay" onclick="closeOv(event,'ov-newSession')">
+<div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-title">🎙 Nowa sesja</div>
+  <p style="font-size:14px;color:var(--muted);margin-bottom:16px;line-height:1.65">Wybierz klienta, z którym przeprowadzasz sesję.</p>
+  <label class="fl">Klient</label>
+  <select class="fi" id="newSessClientSel" style="cursor:pointer"></select>
+  <button class="btn btn-green" style="margin-top:12px" onclick="startSessionFromPicker()">🎙 Rozpocznij sesję</button>
+  <button class="btn btn-outline" style="margin-top:8px" onclick="closeOv(null,'ov-newSession')">Anuluj</button>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+let SB = null;           // supabase client
+let API_KEY = '';
+let DB = {clients:[], sessions:[]};
+let curClientId = null;
+let curSessId   = null;
+let curPanel    = 'home'; // home | clients | client | session | settings
+let editingId   = null;
+
+// Session state
+let rec = null, isLive = false;
+let wakeLock = null; // Screen Wake Lock — keeps screen on during recording
+let sessTx = '', sessElapsed = 0, sessNotes = null;
+let sessFree = '', sessOrg = '';
+let sessDeepCache = null;
+let timerInt = null, autoInt = null;
+let curTab = 'tx';
+let sessDirty = false; // true when session has unsaved changes
+let sessOpenedFrom = 'client'; // 'client' | 'home' — where to return after endSession
+
+// ═══════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════
+window.onload = async () => {
+  // Apply theme immediately (before anything else renders)
+  applyTheme(ls('pn_theme') === 'dark');
+  loadDB();
+
+  // Try loading config.json (pre-configured deployment)
+  try {
+    const r = await fetch('/config.json');
+    if (r.ok) {
+      const cfg = await r.json();
+      if (cfg.api_key) { ls('pn_api', cfg.api_key); }
+      if (cfg.supa_url) { ls('pn_su', cfg.supa_url); }
+      if (cfg.supa_key) { ls('pn_sk', cfg.supa_key); }
+    }
+  } catch(e) { /* no config.json */ }
+
+  API_KEY = ls('pn_api') || '';
+  // If encryption enabled — show lock screen and STOP boot here
+  // bootAfterUnlock() will continue when password is correct
+  await loadEncryption();
+  if (ls('pn_enc')) return;
+
+  const su = ls('pn_su'), sk = ls('pn_sk');
+  if (su && sk) await initSupa(su, sk, false);
+  checkDriveToken();
+  if (API_KEY) {
+    showApp();
+    renderEncUI();
+    autoBackup();
+    handleExtensionImport();
+  }
+  else showView('v-setup');
+};
+
+function showApp() {
+  showView('v-app');
+  showPanel('home');
+  updatePrivacyBtn();
+  renderSidebar();
+}
+
+// ═══════════════════════════════════════════════════
+// VIEWS / PANELS
+// ═══════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('body > .view').forEach(v => v.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+
+function showPanel(name) {
+  // If leaving session panel — clear autosave interval
+  if (curPanel === 'session' && name !== 'session') {
+    clearInterval(autoInt); autoInt = null;
+    clearInterval(timerInt); timerInt = null; // safety — stopRec() also clears this
+  }
+  curPanel = name;
+  ['home','clients','client','session','settings'].forEach(p => {
+    const el = document.getElementById('p-'+p);
+    if(el) { el.classList.toggle('show', p===name); }
+  });
+  // Topbar buttons
+  const back = document.getElementById('backBtn');
+  const edit = document.getElementById('editBtn');
+  back.style.display = (name !== 'home' && name !== 'clients') ? 'flex' : 'none';
+  edit.style.display = (name === 'client') ? 'flex' : 'none';
+  // Title
+  const ti = document.getElementById('appTitle');
+  if(name === 'home')    ti.innerHTML = 'PsychNote <em>AI</em><small>Przegląd</small>';
+  if(name === 'clients') ti.innerHTML = 'PsychNote <em>AI</em><small>Wszyscy klienci</small>';
+  // Sidebar nav highlight
+  const snHome = document.getElementById('sb-home');
+  const snClients = document.getElementById('sb-clients-nav');
+  if (snHome)    snHome.classList.toggle('active', name === 'home');
+  if (snClients) snClients.classList.toggle('active', name === 'clients');
+  // Render home dashboard when navigating to it
+  if (name === 'home') renderHome();
+}
+
+function goBack() {
+  if (curPanel === 'session') { openEndSession(); return; }
+  if (curPanel === 'client')  { showPanel('home'); renderSidebar(); return; }
+  if (curPanel === 'settings') { showPanel('home'); return; }
+  showPanel('home');
+}
+
+
+// ═══════════════════════════════════════════════════
+// HOME DASHBOARD
+// ═══════════════════════════════════════════════════
+function renderHome() {
+  const el = document.getElementById('homeContent');
+  if (!el) return;
+
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 18 ? 'Dzień dobry' : 'Dobry wieczór';
+  const dayNames = ['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'];
+  const monthNames = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
+  const dateStr = `${dayNames[now.getDay()]}, ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+  const clients = DB.clients;
+  const sessions = DB.sessions;
+
+  // ── Global stats ──
+  const totalClients = clients.length;
+  const totalSessions = sessions.length;
+
+  // This month
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const sessThisMonth = sessions.filter(s => new Date(s.date) >= monthStart);
+  const thisMonthCount = sessThisMonth.length;
+
+  // Total therapy hours
+  const totalSec = sessions.reduce((a,s) => a + (s.duration_sec||0), 0);
+  const totalHours = totalSec > 0 ? (totalSec/3600).toFixed(1) : '—';
+
+  // Avg mood this month (only sessions with mood > 0)
+  const moodSess = sessThisMonth.filter(s => s.mood > 0);
+  const avgMood = moodSess.length ? (moodSess.reduce((a,s)=>a+s.mood,0)/moodSess.length).toFixed(1) : null;
+  const moodNum = parseFloat(avgMood);
+  const moodCol = avgMood ? (moodNum >= 7 ? 'var(--green)' : moodNum >= 5 ? 'var(--warm)' : 'var(--live)') : 'var(--muted)';
+
+  // ── Recent sessions (last 8) across all clients ──
+  const recentSessions = [...sessions]
+    .sort((a,b) => b.date < a.date ? -1 : b.date > a.date ? 1 : 0) // string compare works for ISO dates
+    .slice(0, 8);
+
+  // ── Build HTML ──
+  let html = `
+    <div class="fadeup" style="animation-delay:.0s">
+      <div class="home-date">${dateStr}</div>
+      <div class="home-greet">${greeting}, <em>dobrego dnia</em></div>
+    </div>
+
+    <div class="stats-grid fadeup" style="animation-delay:.05s">
+      <div class="stat-tile">
+        <div class="stat-tile-icon">👥</div>
+        <div class="stat-tile-val">${totalClients}</div>
+        <div class="stat-tile-lbl">Klientów</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-icon">📋</div>
+        <div class="stat-tile-val">${thisMonthCount}</div>
+        <div class="stat-tile-lbl">Sesji w tym miesiącu</div>
+        <div class="stat-tile-sub">${totalSessions} łącznie</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-icon">⏱</div>
+        <div class="stat-tile-val">${totalHours}</div>
+        <div class="stat-tile-lbl">Godzin terapii</div>
+        <div class="stat-tile-sub">łącznie</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-icon">💭</div>
+        <div class="stat-tile-val" style="color:${moodCol}">${avgMood || '—'}</div>
+        <div class="stat-tile-lbl">Śr. nastrój</div>
+        <div class="stat-tile-sub">w tym miesiącu</div>
+      </div>
+    </div>
+
+    <div class="quick-actions fadeup" style="animation-delay:.08s">
+      <button class="qa-btn primary" onclick="openNewSessionPicker()">
+        <span class="qa-ico">🎙</span>
+        <div>
+          <div>Nowa sesja</div>
+          <div style="font-size:10px;opacity:.75;font-weight:400;margin-top:1px">Wybierz klienta</div>
+        </div>
+      </button>
+      <button class="qa-btn" onclick="openAddClient()">
+        <span class="qa-ico">➕</span>
+        <div>
+          <div>Nowy klient</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:1px">Dodaj do kartoteki</div>
+        </div>
+      </button>
+    </div>`;
+
+  // ── Recent sessions list ──
+  if (recentSessions.length) {
+    html += `<div class="home-sec fadeup" style="animation-delay:.11s">
+      <div class="home-sec-head">
+        <div class="home-sec-title">🕐 Ostatnie sesje</div>
+        <div class="home-sec-link" onclick="showPanel('clients');renderClients()">Wszyscy klienci →</div>
+      </div>`;
+
+    html += recentSessions.map(s => {
+      const c = clients.find(x => x.id === s.client_id);
+      if (!c) return '';
+      const d = new Date(s.date);
+      const isToday = d.toDateString() === now.toDateString();
+      const isYesterday = d.toDateString() === new Date(now - 86400000).toDateString();
+      let dateLabel;
+      if (isToday) dateLabel = 'Dziś, ' + d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+      else if (isYesterday) dateLabel = 'Wczoraj';
+      else dateLabel = d.toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
+
+      const topic = s.notes?.temat_sesji || (s.transcript ? s.transcript.slice(0,60)+'…' : 'Brak transkryptu');
+      const dur = s.duration_sec ? Math.round(s.duration_sec/60)+'min' : '';
+      const moodBg = s.mood > 0 ? (s.mood<=3?'#fef0f0':s.mood<=6?'#FDF5EE':'var(--green-bg)') : '';
+      const moodFg = s.mood > 0 ? (s.mood<=3?'var(--live)':s.mood<=6?'var(--warm)':'var(--green)') : '';
+
+      return `<div class="recent-item" onclick="openSession('${s.id}')">
+        <div class="recent-av">${initials(c.name)}</div>
+        <div class="recent-body">
+          <div class="recent-name">${esc(maskName(c.name))}</div>
+          <div class="recent-meta">${esc(topic.slice(0,70))}${topic.length>70?'…':''}</div>
+          ${dur ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">⏱ ${dur}</div>` : ''}
+        </div>
+        <div class="recent-right">
+          <div class="recent-date">${dateLabel}</div>
+          ${s.mood > 0 ? `<div class="recent-mood" style="background:${moodBg};color:${moodFg}">${s.mood}/10</div>` : ''}
+          ${s.tags?.length ? `<div style="font-size:9px;color:var(--muted)">${esc(s.tags[0])}${s.tags.length>1?' +'+( s.tags.length-1):''}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `</div>`;
+  } else {
+    html += `<div class="home-sec fadeup" style="animation-delay:.11s">
+      <div class="home-sec-head">
+        <div class="home-sec-title">🕐 Ostatnie sesje</div>
+      </div>
+      <div class="home-empty">
+        Brak sesji.<br>Naciśnij "Nowa sesja" aby zacząć.
+      </div>
+    </div>`;
+  }
+
+  // ── Client list (compact) ──
+  if (clients.length) {
+    html += `<div class="home-sec fadeup" style="animation-delay:.14s">
+      <div class="home-sec-head">
+        <div class="home-sec-title">👥 Twoi klienci</div>
+        <div class="home-sec-link" onclick="showPanel('clients');renderClients()">Pełna lista →</div>
+      </div>`;
+
+    const sorted = [...clients].map(c => {
+      const cSessions = sessions.filter(s => s.client_id === c.id);
+      const last = cSessions.sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+      return {c, count: cSessions.length, last};
+    }).sort((a,b) => {
+      if (!a.last && !b.last) return 0;
+      if (!a.last) return 1;
+      if (!b.last) return -1;
+      return new Date(b.last.date) - new Date(a.last.date);
+    });
+
+    html += sorted.map(({c, count, last}) => {
+      const lastDate = last ? new Date(last.date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'}) : 'brak sesji';
+      const lastMood = last?.mood > 0 ? last.mood : null;
+      const moodBg = lastMood ? (lastMood<=3?'#fef0f0':lastMood<=6?'#FDF5EE':'var(--green-bg)') : null;
+      const moodFg = lastMood ? (lastMood<=3?'var(--live)':lastMood<=6?'var(--warm)':'var(--green)') : null;
+      return `<div class="recent-item" onclick="openClient('${c.id}')">
+        <div class="recent-av">${initials(c.name)}</div>
+        <div class="recent-body">
+          <div class="recent-name">${esc(maskName(c.name))}</div>
+          <div class="recent-meta">${esc(c.issue||'')} · ${count} sesji · ostatnia: ${lastDate}</div>
+        </div>
+        <div class="recent-right">
+          ${lastMood ? `<div class="recent-mood" style="background:${moodBg};color:${moodFg}">${lastMood}/10</div>` : ''}
+          <button onclick="event.stopPropagation();newSession('${c.id}')" style="font-size:10px;padding:3px 8px;border-radius:7px;border:1px solid var(--green-ll);background:var(--green-bg);color:var(--green);cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap">+ Sesja</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// ── Quick new session picker overlay ──
+function openNewSessionPicker() {
+  if (!DB.clients.length) {
+    toast('Najpierw dodaj klienta', 'err');
+    openAddClient();
+    return;
+  }
+  const sel = document.getElementById('newSessClientSel');
+  sel.innerHTML = DB.clients.map(c => `<option value="${c.id}">${esc(c.name)}${c.issue?' · '+esc(c.issue.slice(0,30)):''}</option>`).join('');
+  openOv('ov-newSession');
+}
+
+function startSessionFromPicker() {
+  const clientId = document.getElementById('newSessClientSel').value;
+  if (!clientId) { toast('Wybierz klienta', 'err'); return; }
+  if (isLive) { toast('Zatrzymaj nagrywanie przed rozpoczęciem nowej sesji', 'err'); return; }
+  closeOv(null, 'ov-newSession');
+  newSession(clientId);
+}
+
+
+function goSettings() {
+  showPanel('settings');
+  const ak = ls('pn_api');
+  document.getElementById('sApiKey').textContent = ak ? ak.slice(0,12)+'…' : 'Brak';
+  const su = ls('pn_su');
+  document.getElementById('sSupaStatus').textContent = su ? '✅ '+su.replace('https://','').split('.')[0]+'…supabase.co' : 'Nie skonfigurowano';
+  const originEl = document.getElementById('myOrigin');
+  if (originEl) originEl.textContent = location.origin;
+  const redirectEl = document.getElementById('myRedirect');
+  if (redirectEl) redirectEl.textContent = location.origin + location.pathname;
+  renderEncUI();
+  updateDriveUI();
+}
+
+function copyMigrationSql() {
+  const sql = `-- Migracja PsychNote — bezpieczna, można uruchomić wielokrotnie
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mood int DEFAULT 5;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS tags jsonb DEFAULT '[]';`;
+  navigator.clipboard.writeText(sql).then(() => toast('✅ SQL skopiowany — wklej w Supabase SQL Editor', 'ok'));
+}
+
+function changeKeys() {
+  showView('v-setup');
+  document.getElementById('iApiKey').value = ls('pn_api') || '';
+  document.getElementById('iSupaUrl').value = ls('pn_su') || '';
+  document.getElementById('iSupaKey').value = ls('pn_sk') || '';
+}
+
+// ═══════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════
+function copySql() {
+  const txt = document.getElementById('sqlEl').textContent;
+  navigator.clipboard.writeText(txt).then(() => toast('SQL skopiowany!', 'ok'));
+}
+
+async function doSetup() {
+  const ak = document.getElementById('iApiKey').value.trim();
+  const su = document.getElementById('iSupaUrl').value.trim();
+  const sk = document.getElementById('iSupaKey').value.trim();
+  if (!ak.startsWith('sk-ant-')) { toast('Wpisz poprawny klucz Anthropic (sk-ant-...)', 'err'); return; }
+  ls('pn_api', ak); API_KEY = ak;
+  if (su && sk) await initSupa(su, sk, true);
+  syncCredsToSupa(); // zapisz API key do Supabase (dla innych urządzeń)
+  showApp();
+}
+
+function doSetupLocal() {
+  const ak = document.getElementById('iApiKey').value.trim();
+  if (!ak.startsWith('sk-ant-')) { toast('Wpisz poprawny klucz Anthropic', 'err'); return; }
+  ls('pn_api', ak); API_KEY = ak;
+  syncCredsToSupa();
+  showApp();
+}
+
+
+// ═══════════════════════════════════════════════════
+// CREDENTIALS SYNC — Supabase settings table
+// ═══════════════════════════════════════════════════
+
+// Zapisz poświadczenia do Supabase (fire & forget)
+async function syncCredsToSupa() {
+  if (!SB) return;
+  const creds = [
+    { key:'pn_api', value: ls('pn_api')||'' },
+    { key:'pn_gcid', value: ls('pn_gcid')||'' }
+  ].filter(c=>c.value);
+  for (const c of creds) {
+    try {
+      await SB.from('app_settings').upsert({ key:c.key, value:c.value, updated_at:new Date().toISOString() });
+    } catch(e) { /* nie blokuj działania aplikacji */ }
+  }
+}
+
+// Odczytaj poświadczenia z Supabase (przy starcie na nowym urządzeniu)
+async function syncCredsFromSupa() {
+  if (!SB) return;
+  try {
+    const {data} = await SB.from('app_settings').select('key,value');
+    if (!data) return;
+    data.forEach(row => {
+      // Zapisz tylko jeśli lokalnie brak — nie nadpisuj tego co użytkownik wpisał
+      if (row.key === 'pn_api'  && !ls('pn_api'))  { ls('pn_api', row.value);  API_KEY = row.value; }
+      if (row.key === 'pn_gcid' && !ls('pn_gcid')) { ls('pn_gcid', row.value); }
+    });
+  } catch(e) { /* settings table może nie istnieć na starych instalacjach */ }
+}
+
+async function initSupa(su, sk, showMsg) {
+  try {
+    await loadSupaLib();
+    SB = window.supabase.createClient(su, sk);
+    const {error} = await SB.from('clients').select('id').limit(1);
+    if (error) throw error;
+    ls('pn_su', su); ls('pn_sk', sk);
+    await syncCredsFromSupa(); // pobierz API key i Google CID z Supabase (jeśli nowe urządzenie)
+    await syncFromSupa();
+    if (showMsg) toast('✅ Połączono z Supabase!', 'ok');
+  } catch(e) {
+    if (showMsg) toast('Błąd Supabase: ' + e.message.slice(0,50), 'err');
+  }
+}
+
+let _supaLibPromise = null;
+function loadSupaLib() {
+  if (window.supabase) return Promise.resolve();
+  if (_supaLibPromise) return _supaLibPromise; // deduplicate concurrent calls
+  _supaLibPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.0/dist/umd/supabase.min.js';
+    s.onload = resolve;
+    s.onerror = () => { _supaLibPromise = null; reject(new Error('Nie można załadować Supabase')); };
+    document.head.appendChild(s);
+  });
+  return _supaLibPromise;
+}
+
+// ═══════════════════════════════════════════════════
+// LOCAL STORAGE
+// ═══════════════════════════════════════════════════
+function ls(k, v) {
+  if (v === undefined) return localStorage.getItem(k);
+  if (v === null) localStorage.removeItem(k);
+  else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+}
+function loadDB() {
+  // Only loads unencrypted pn_db — encrypted path handled in unlockApp() via pn_db_enc
+  try { const d = ls('pn_db'); if(d) DB = JSON.parse(d); } catch(e) {}
+  if (!DB.clients) DB.clients = [];
+  if (!DB.sessions) DB.sessions = [];
+}
+
+async function saveDB() {
+  try {
+    if (ENC_KEY) {
+      const enc = await encryptStr(JSON.stringify(DB));
+      ls('pn_db_enc', enc);
+    } else {
+      ls('pn_db', DB);
+    }
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      toast('⚠️ Brak miejsca w przeglądarce! Zrób backup na Google Drive i usuń stare sesje.', 'err');
+    } else {
+      throw e;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SUPABASE SYNC
+// ═══════════════════════════════════════════════════
+async function syncFromSupa() {
+  if (!SB) return;
+  try {
+    // Paginated fetch — Supabase default limit is 1000; fetch all with range
+    async function fetchAll(table, order) {
+      const PAGE = 1000;
+      let all = [], from = 0;
+      while (true) {
+        const {data, error} = await SB.from(table).select('*').order(order,{ascending:false}).range(from, from+PAGE-1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break; // last page
+        from += PAGE;
+      }
+      return all;
+    }
+
+    const [c, s] = await Promise.all([
+      fetchAll('clients', 'created_at'),
+      fetchAll('sessions', 'date')
+    ]);
+
+    DB.clients = c;
+
+    // Wyślij rekordy które były tworzone offline (_pending_sync)
+    // Są tylko lokalnie — Supabase ich nie ma, więc nie ma ich w 's'
+    const pendingSessions = DB.sessions.filter(loc => loc._pending_sync && !s.find(r => r.id === loc.id));
+    for (const p of pendingSessions) {
+      const {_pending_sync, deep_cache, ...supaS} = p;
+      try {
+        await SB.from('sessions').insert(supaS);
+        delete p._pending_sync; // oznacz jako zsynchronizowany
+        console.log('[sync] pending session synced:', p.id);
+      } catch(e) { console.warn('[sync] pending session failed:', p.id, e.message); }
+    }
+
+    DB.sessions = s.map(remote => {
+      const local = DB.sessions.find(l => l.id === remote.id);
+      // Use nullish coalescing — don't treat "" as "missing"
+      // deep_cache is local-only (no Supabase column) — always preserve local value
+      return {
+        ...remote,
+        mood: remote.mood ?? local?.mood ?? 5,
+        tags: remote.tags ?? local?.tags ?? [],
+        notes: remote.notes ?? local?.notes ?? null,
+        transcript: remote.transcript ?? local?.transcript ?? '',
+        free_notes: remote.free_notes ?? local?.free_notes ?? '',
+        organized_notes: remote.organized_notes ?? local?.organized_notes ?? '',
+        deep_cache: local?.deep_cache ?? null,
+      };
+    });
+    await saveDB();
+  } catch(e) {
+    console.warn('syncFromSupa failed:', e.message);
+    // Don't throw — continue with local data
+  }
+}
+async function sbIns(table, data) {
+  if (!SB) return {...data, id: uuid(), created_at: new Date().toISOString()};
+  try {
+    const {data:r, error} = await SB.from(table).insert(data).select().single();
+    if (error) throw error;
+    return r;
+  } catch(e) {
+    console.warn(`sbIns(${table}) failed — using local fallback:`, e.message);
+    // Mark as pending sync so user knows to reconnect
+    const local = {...data, id: data.id || uuid(), created_at: new Date().toISOString(), _pending_sync: true};
+    // Show non-blocking warning after a short delay (don't block UX)
+    setTimeout(() => toast('⚠️ Nie udało się zapisać w Supabase — dane są lokalnie. Synchronizuj po przywróceniu połączenia.', 'err'), 100);
+    return local;
+  }
+}
+async function sbUpd(table, id, data) {
+  if (!SB) return;
+  try {
+    const {error} = await SB.from(table).update(data).eq('id', id);
+    if (error) console.warn('Supabase update error:', error.message);
+  } catch(e) { console.warn('Supabase update failed:', e.message); }
+}
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════
+function renderSidebar(activeId) {
+  const el = document.getElementById('sbList');
+  if (!DB.clients.length) { el.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--muted)">Brak klientów</div>'; return; }
+  el.innerHTML = DB.clients.map(c => {
+    const av = initials(c.name);
+    const sc = DB.sessions.filter(s=>s.client_id===c.id).length;
+    return `<div class="sb-item${c.id===activeId?' active':''}" onclick="openClient('${c.id}')">
+      <div class="sb-av">${av}</div>
+      <div style="min-width:0;flex:1">
+        <div class="sb-name">${esc(maskName(c.name))}</div>
+        <div class="sb-sub">${sc} sesji${c.issue?' · '+esc(c.issue.slice(0,16)):''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// CLIENTS
+// ═══════════════════════════════════════════════════
+function renderClients() {
+  const el = document.getElementById('clientList');
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+
+  if (!DB.clients.length) {
+    el.innerHTML = `<div class="empty"><div class="ico">🌱</div><h3>Brak klientów</h3><p>Naciśnij + aby dodać pierwszego klienta</p></div>`;
+    return;
+  }
+
+  // Build search results
+  const results = DB.clients.map(c => {
+    const sessions = DB.sessions.filter(s => s.client_id === c.id);
+    if (!q) return { c, sessions, matches: [] };
+
+    const nameMatch = c.name.toLowerCase().includes(q) || (c.issue||'').toLowerCase().includes(q) || (c.notes||'').toLowerCase().includes(q);
+    const sessMatches = sessions.filter(s => {
+      return (s.transcript||'').toLowerCase().includes(q) ||
+             (s.free_notes||'').toLowerCase().includes(q) ||
+             (s.organized_notes||'').toLowerCase().includes(q) ||
+             (s.notes?.temat_sesji||'').toLowerCase().includes(q) ||
+             (s.notes?.kluczowe_watki||[]).some(w => w.toLowerCase().includes(q)) ||
+             (s.notes?.notatki_kliniczne||'').toLowerCase().includes(q) ||
+             (s.tags||[]).some(t => t.toLowerCase().includes(q));
+    });
+    if (!nameMatch && !sessMatches.length) return null;
+    return { c, sessions, matches: sessMatches, nameMatch };
+  }).filter(Boolean);
+
+  if (!results.length) {
+    el.innerHTML = `<div class="empty"><div class="ico">🔍</div><h3>Brak wyników</h3><p>Nie znaleziono nic dla "<strong>${esc(q)}</strong>"</p></div>`;
+    return;
+  }
+
+  el.innerHTML = results.map(({ c, sessions, matches, nameMatch }) => {
+    const sc = sessions.length;
+    const last = sessions.sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    const ld = last ? new Date(last.date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'}) : 'brak sesji';
+
+    // Session match snippets under card
+    let matchHtml = '';
+    if (q && matches.length) {
+      matchHtml = matches.slice(0,3).map(s => {
+        const d = new Date(s.date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
+        // Find excerpt around query
+        const searchIn = [s.notes?.temat_sesji, (s.tags||[]).join(', '), s.free_notes, s.transcript].filter(Boolean).join(' ');
+        const idx = searchIn.toLowerCase().indexOf(q);
+        const excerpt = idx >= 0 ? '…' + searchIn.slice(Math.max(0, idx-30), idx+60).trim() + '…' : searchIn.slice(0,80);
+        return `<div onclick="openSession('${s.id}')" style="padding:6px 10px;margin-top:4px;border-radius:8px;background:var(--bg);border:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--muted);line-height:1.5">
+          <span style="color:var(--green);font-weight:600">${d}</span> — ${highlight(esc(excerpt), q)}
+        </div>`;
+      }).join('');
+      if (matches.length > 3) matchHtml += `<div style="font-size:11px;color:var(--muted);padding:4px 10px">+${matches.length-3} więcej sesji</div>`;
+    }
+
+    return `<div class="client-card fadeup" style="${q && matches.length && !nameMatch ? 'opacity:.85' : ''}">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="openClient('${c.id}')">
+        <div class="c-av">${initials(c.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="c-name">${q ? highlight(esc(maskName(c.name)), q) : esc(maskName(c.name))}</div>
+          <div class="c-meta">${ageStr(c.age)}${c.age?' · ':''}${q ? highlight(esc(c.issue||'Brak opisu'),q) : esc(c.issue||'Brak opisu')} · Ostatnia: ${ld}</div>
+        </div>
+        <div class="c-sessions">${sc} sesji</div>
+      </div>
+      ${matchHtml}
+    </div>`;
+  }).join('');
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+  return text.replace(re, '<mark style="background:#FFF3CD;color:inherit;border-radius:3px;padding:0 2px">$1</mark>');
+}
+
+function openAddClient() {
+  editingId = null;
+  document.getElementById('shClientTitle').textContent = 'Nowy klient';
+  document.getElementById('shSaveBtn').textContent = 'Dodaj klienta';
+  ['shName','shAge','shIssue','shNotes'].forEach(id => document.getElementById(id).value = '');
+  openOv('ov-client');
+}
+
+function editClient() {
+  const c = DB.clients.find(x=>x.id===curClientId); if(!c) return;
+  editingId = c.id;
+  document.getElementById('shClientTitle').textContent = 'Edytuj klienta';
+  document.getElementById('shSaveBtn').textContent = 'Zapisz zmiany';
+  document.getElementById('shName').value = c.name;
+  document.getElementById('shAge').value = c.age||'';
+  document.getElementById('shIssue').value = c.issue||'';
+  document.getElementById('shNotes').value = c.notes||'';
+  openOv('ov-client');
+}
+
+async function saveClient() {
+  const name = document.getElementById('shName').value.trim();
+  if (!name) { toast('Wpisz imię klienta', 'err'); return; }
+  const birthYear = parseInt(document.getElementById('shAge').value)||null;
+  const currentYear = new Date().getFullYear();
+  if (birthYear && (birthYear < 1900 || birthYear > currentYear - 1)) {
+    toast('Podaj prawidłowy rok urodzenia', 'err'); return;
+  }
+  const data = {
+    name,
+    age: birthYear,
+    issue: document.getElementById('shIssue').value.trim(),
+    notes: document.getElementById('shNotes').value.trim()
+  };
+  closeOv(null,'ov-client');
+  if (editingId) {
+    const i = DB.clients.findIndex(c=>c.id===editingId);
+    if (i>-1) DB.clients[i] = {...DB.clients[i], ...data};
+    await sbUpd('clients', editingId, data);
+    toast('Zaktualizowano klienta', 'ok');
+    renderClientDetail();
+  } else {
+    try { const r = await sbIns('clients', data); DB.clients.unshift(r); }
+    catch(e) { DB.clients.unshift({id:uuid(), ...data, created_at:new Date().toISOString()}); }
+    toast('Dodano klienta!', 'ok');
+  }
+  await saveDB(); renderClients(); renderSidebar(editingId||curClientId); if(curPanel==='home') renderHome();
+}
+
+function openClient(id) {
+  curClientId = id;
+  renderClientDetail();
+  renderSidebar(id);
+  showPanel('client');
+  const c = DB.clients.find(x=>x.id===id);
+  if (c) {
+    document.getElementById('appTitle').innerHTML = `${esc(maskName(c.name))}<small>${ageStr(c.age)}${c.age?' · ':''}${esc(c.issue||'')}</small>`;
+  }
+}
+
+function renderClientDetail() {
+  const c = DB.clients.find(x=>x.id===curClientId); if(!c) return;
+  const sessions = DB.sessions.filter(s=>s.client_id===c.id).sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:0);
+
+  let html = `
+    <div class="c-header">
+      <div class="c-header-av">${initials(c.name)}</div>
+      <div>
+        <div class="c-header-name">${esc(maskName(c.name))}</div>
+        <div class="c-header-meta">${ageStr(c.age)}${c.age?' · ':''}${esc(c.issue||'')}${c.notes?'<br><span style="font-size:11px;color:var(--muted)">'+esc(c.notes).slice(0,100)+'</span>':''}</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-green" onclick="newSession('${c.id}')">🎙 Nowa sesja</button>
+      <button class="btn btn-outline" onclick="editClient()">✏️ Edytuj</button>
+    </div>
+    <div class="action-row" style="margin-bottom:12px">
+      <button class="btn btn-outline" onclick="exportClient('${c.id}')">⬇ Eksportuj kartotekę</button>
+      <button class="btn" style="background:#fef0f0;color:var(--live);border:1px solid rgba(204,51,51,.2)" onclick="deleteClient('${c.id}')">🗑 Usuń klienta</button>
+    </div>
+    <div class="action-row" style="margin-bottom:12px">
+      <button class="btn btn-outline" style="width:100%;background:var(--green-bg);border-color:var(--green);color:var(--green)" onclick="openGuide('${c.id}')">🗂 Przewodnik konsultacji</button>
+    </div>`;
+
+  // ── STATYSTYKI ───────────────────────────────────
+  if (sessions.length) {
+    const totalSec = sessions.reduce((a,s) => a + (s.duration_sec||0), 0);
+    const totalMin = Math.round(totalSec / 60);
+    const totalHours = (totalSec / 3600).toFixed(1);
+    const moodSess = sessions.filter(s => s.mood > 0); // 0/null/undefined = no mood recorded
+    const avgMood = moodSess.length ? (moodSess.reduce((a,s)=>a+s.mood,0)/moodSess.length).toFixed(1) : null;
+    const minMood = moodSess.length ? Math.min(...moodSess.map(s=>s.mood)) : null;
+    const maxMood = moodSess.length ? Math.max(...moodSess.map(s=>s.mood)) : null;
+
+    // Mood trend: compare first half vs second half avg
+    let trendIcon = '', trendLabel = '', trendColor = 'var(--muted)';
+    if (moodSess.length >= 4) {
+      const half = Math.floor(moodSess.length / 2);
+      const recent = moodSess.slice(0, half);
+      const older  = moodSess.slice(moodSess.length - half);
+      const recentAvg = recent.reduce((a,s)=>a+s.mood,0)/recent.length;
+      const olderAvg  = older.reduce((a,s)=>a+s.mood,0)/older.length;
+      const diff = recentAvg - olderAvg;
+      if (diff > 0.5)       { trendIcon='↑'; trendLabel='poprawa'; trendColor='var(--green)'; }
+      else if (diff < -0.5) { trendIcon='↓'; trendLabel='pogorszenie'; trendColor='var(--live)'; }
+      else                  { trendIcon='→'; trendLabel='stabilny'; trendColor='var(--warm)'; }
+    }
+
+    // Session frequency
+    let freqLabel = '';
+    if (sessions.length >= 2) {
+      const sorted = [...sessions].sort((a,b)=>new Date(a.date)-new Date(b.date));
+      const first = new Date(sorted[0].date), last2 = new Date(sorted[sorted.length-1].date);
+      const daySpan = (last2 - first) / 86400000;
+      const avgDays = daySpan / (sessions.length - 1);
+      if (avgDays <= 8)       freqLabel = 'co tydzień';
+      else if (avgDays <= 16) freqLabel = 'co 2 tygodnie';
+      else if (avgDays <= 40) freqLabel = 'co miesiąc';
+      else                    freqLabel = `co ~${Math.round(avgDays)} dni`;
+    }
+
+    // Top tags
+    const tagCount = {};
+    sessions.forEach(s => (s.tags||[]).forEach(t => { tagCount[t] = (tagCount[t]||0)+1; }));
+    const topTags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    // First session
+    const firstDate = sessions.length ? new Date(sessions[sessions.length-1].date).toLocaleDateString('pl-PL',{day:'numeric',month:'long',year:'numeric'}) : '';
+
+    const statBox = (icon, label, value, sub='', color='') =>
+      `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:11px;color:var(--muted)">${icon} ${label}</div>
+        <div style="font-size:18px;font-weight:700;color:${color||'var(--text)'};line-height:1.2">${value}</div>
+        ${sub?`<div style="font-size:10px;color:var(--muted)">${sub}</div>`:''}
+      </div>`;
+
+    html += `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">📊 Statystyki</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        ${statBox('📋','Sesji łącznie', sessions.length, firstDate ? 'od '+firstDate : '')}
+        ${statBox('⏱','Godzin terapii', totalHours+'h', totalMin > 0 ? totalMin+' minut łącznie' : '')}
+        ${avgMood ? statBox('💭','Śr. nastrój', avgMood+'/10', minMood+'–'+maxMood+' zakres', avgMood>=7?'var(--green)':avgMood>=5?'var(--warm)':'var(--live)') : ''}
+        ${trendLabel ? statBox('📈','Trend nastroju', trendIcon+' '+trendLabel, 'ostatnie vs. wcześniejsze', trendColor) : ''}
+        ${freqLabel ? statBox('📅','Częstotliwość', freqLabel, sessions.length+' sesji') : ''}
+        ${sessions.filter(s=>s.transcript&&s.transcript.length>100).length ? statBox('🎙','Z transkryptem', sessions.filter(s=>s.transcript&&s.transcript.length>100).length, 'z '+sessions.length+' sesji') : ''}
+      </div>
+      ${topTags.length ? `<div style="margin-top:6px"><div style="font-size:10px;color:var(--muted);margin-bottom:5px">🏷 Najczęstsze tagi</div><div style="display:flex;flex-wrap:wrap;gap:4px">${topTags.map(([t,n])=>`<span style="padding:3px 9px;border-radius:20px;font-size:11px;background:var(--green-bg);color:var(--green);border:1px solid var(--border)">${esc(t)} <span style="opacity:.6">×${n}</span></span>`).join('')}</div></div>` : ''}
+    </div>`;
+  }
+
+  // ── WYKRES NASTROJU ──────────────────────────────
+  const moodSessions = sessions.filter(s => s.mood > 0).reverse();
+  if (moodSessions.length >= 2) {
+    const W = 320, H = 90, PAD = 18;
+    const xs = moodSessions.map((_,i) => PAD + i * (W - PAD*2) / (moodSessions.length - 1));
+    const ys = moodSessions.map(s => H - PAD - (s.mood - 1) * (H - PAD*2) / 9);
+    const line = xs.map((x,i) => `${i===0?'M':'L'}${x},${ys[i]}`).join(' ');
+    const area = `M${xs[0]},${H} ` + xs.map((x,i)=>`L${x},${ys[i]}`).join(' ') + ` L${xs[xs.length-1]},${H} Z`;
+    const dots = moodSessions.map((s,i) => {
+      const col = s.mood<=3?'#CC3333':s.mood<=6?'#A8682C':'#3D6642';
+      const d = new Date(s.date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
+      return `<circle cx="${xs[i]}" cy="${ys[i]}" r="4" fill="${col}" stroke="white" stroke-width="1.5"><title>${d}: ${s.mood}/10</title></circle>`;
+    }).join('');
+    // Y axis labels
+    const yLabels = [1,5,10].map(v => {
+      const y = H - PAD - (v-1) * (H - PAD*2) / 9;
+      return `<text x="0" y="${y+3}" font-size="8" fill="#8A7A68">${v}</text>`;
+    }).join('');
+    html += `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">📈 Nastrój klienta w czasie</div>
+      <svg width="100%" viewBox="-8 0 ${W+8} ${H}" style="display:block;overflow:visible">
+        <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3D6642" stop-opacity=".15"/><stop offset="100%" stop-color="#3D6642" stop-opacity="0"/></linearGradient></defs>
+        ${yLabels}
+        <path d="${area}" fill="url(#mg)"/>
+        <path d="${line}" fill="none" stroke="#3D6642" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+        <text x="${PAD}" y="${H-2}" font-size="9" fill="#8A7A68">${new Date(moodSessions[0].date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'})}</text>
+        <text x="${W-PAD}" y="${H-2}" font-size="9" fill="#8A7A68" text-anchor="end">${new Date(moodSessions[moodSessions.length-1].date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'})}</text>
+      </svg>
+    </div>`;
+  }
+
+  html += `<div class="sec-title">Historia sesji (${sessions.length})</div>`;
+
+  if (!sessions.length) {
+    html += `<div class="empty" style="padding:32px 20px"><div class="ico" style="font-size:36px">📋</div><p>Brak sesji — naciśnij "Nowa sesja"</p></div>`;
+  } else {
+    html += sessions.map(s => {
+      const d = new Date(s.date);
+      const ds = d.toLocaleDateString('pl-PL',{weekday:'short',day:'numeric',month:'long'});
+      const ts = d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+      const dur = s.duration_sec ? Math.round(s.duration_sec/60)+'min' : '';
+      const tema = s.notes?.temat_sesji;
+      const watki = s.notes?.kluczowe_watki;
+      return `<div class="sess-item fadeup" style="position:relative">
+        <div onclick="openSession('${s.id}')" style="flex:1;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="sess-date">${ds} · ${ts}${dur?' · '+dur:''}</div>
+            ${s.mood ? `<span style="font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;background:${s.mood<=3?'#fef0f0':s.mood<=6?'#FDF5EE':'var(--green-bg)'};color:${s.mood<=3?'var(--live)':s.mood<=6?'var(--warm)':'var(--green)'}">${s.mood}/10</span>` : ''}
+          </div>
+          ${tema?`<div class="sess-preview">${esc(tema)}</div>`:''}
+          ${s.tags?.length?`<div class="tags" style="margin-top:4px">${s.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
+          ${watki?.length && !s.tags?.length?`<div class="tags">${watki.slice(0,3).map(w=>`<span class="tag">${esc(w)}</span>`).join('')}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="exportSession('${s.id}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer">⬇ Eksport</button>
+          <button onclick="deleteSession('${s.id}')" style="padding:5px 10px;border-radius:7px;border:1px solid rgba(204,51,51,.2);background:#fef0f0;color:var(--live);font-size:11px;cursor:pointer">🗑 Usuń</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('clientDetail').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// SESSION
+// ═══════════════════════════════════════════════════
+async function newSession(clientId) {
+  curClientId = clientId;
+  const data = {client_id:clientId, date:new Date().toISOString(), transcript:'', notes:null, free_notes:'', organized_notes:'', duration_sec:0, mood:5, tags:[]};
+  let sess;
+  try { sess = await sbIns('sessions', data); }
+  catch(e) { sess = {id:uuid(), ...data, created_at:new Date().toISOString()}; }
+  DB.sessions.unshift(sess); curSessId = sess.id; await saveDB();
+  sessTx=''; sessElapsed=0; sessNotes=null; sessFree=''; sessOrg=''; sessDeepCache=null; sessMood=5; sessTags=[]; sessDirty=false; sessOpenedFrom='client';
+  const di = document.getElementById('durInput');
+  if (di) di.value = '';
+  initSessionUI();
+  showPanel('session');
+}
+
+async function openSession(id) {
+  const s = DB.sessions.find(x=>x.id===id); if(!s) return;
+  curSessId = id; curClientId = s.client_id;
+  sessTx = s.transcript||''; sessNotes = s.notes||null;
+  sessFree = s.free_notes||''; sessOrg = s.organized_notes||'';
+  sessElapsed = s.duration_sec||0;
+  const di = document.getElementById('durInput');
+  if (di) di.value = sessElapsed > 0 ? Math.round(sessElapsed/60) : '';
+  sessMood = s.mood||5;
+  sessTags = s.tags||[];
+  sessDeepCache = s.deep_cache||null;
+  sessDirty = false;
+  sessOpenedFrom = curPanel; // remember where we came from
+  initSessionUI();
+  showPanel('session');
+}
+
+function initSessionUI() {
+  switchTab('tx');
+  document.getElementById('timerEl').textContent = fmt(sessElapsed);
+  const wc = sessTx.trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('wcEl').textContent = wc+' słów';
+  document.getElementById('analyzeBtn').disabled = !sessTx.trim();
+  document.getElementById('dockLabel').textContent = isLive ? 'Nagrywanie…' : 'Naciśnij aby nagrywać';
+  renderTx(); renderNotes();
+  document.getElementById('freeInput').value = sessFree;
+  if (sessOrg) { document.getElementById('organizedText').value = sessOrg; document.getElementById('organizedOut').style.display='block'; }
+  else document.getElementById('organizedOut').style.display='none';
+  // Mood slider — silent init (no saveNow)
+  const slider = document.getElementById('moodSlider');
+  if (slider) {
+    slider.value = sessMood;
+    const el = document.getElementById('moodVal');
+    if (el) {
+      el.textContent = sessMood;
+      const col = sessMood <= 3 ? 'var(--live)' : sessMood <= 6 ? 'var(--warm)' : 'var(--green)';
+      el.style.color = col;
+      slider.style.accentColor = col;
+    }
+  }
+  // Tags
+  renderTagsUI();
+  const c = DB.clients.find(x=>x.id===curClientId);
+  const sess = DB.sessions.find(x=>x.id===curSessId);
+  const ds = sess ? new Date(sess.date).toLocaleDateString('pl-PL',{day:'numeric',month:'long'}) : '';
+  document.getElementById('appTitle').innerHTML = `${c?esc(maskName(c.name)):'Sesja'}<small>${ds}</small>`;
+}
+
+function switchTab(tab) {
+  curTab = tab;
+  ['tx','notes','free'].forEach(t => {
+    document.getElementById('st-'+t).classList.toggle('on', t===tab);
+    document.getElementById('sp-'+t).classList.toggle('on', t===tab);
+  });
+}
+
+// ─── RECORDING (fixed no-duplicate logic) ─────────
+function toggleRec() { isLive ? stopRec() : startRec(); }
+
+function startRec() {
+  if (isLive) return; // guard against double-click race
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Przeglądarka nie obsługuje rozpoznawania mowy. Użyj Chrome.', 'err'); return; }
+
+  // ── TRYB: continuous=false ──────────────────────────
+  // Każda instancja SR obsługuje JEDNO zdanie, potem kończy.
+  // Eliminuje re-ewaluację i nakładanie wyników przez Chrome.
+  //
+  // Dodatkowa ochrona: Set znormalizowanych fragmentów —
+  // ten sam tekst nie może być dodany dwa razy niezależnie od przyczyny.
+  const committedSet = new Set();
+
+  // Normalizuje tekst do porównania (małe litery, bez spacji na końcach)
+  function normTx(t) { return t.toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+  // Usuwa nakładające się słowa na styku zdań (backup dla edge cases)
+  function deduplicateBoundary(existing, incoming) {
+    if (!existing.trim()) return incoming;
+    const existWords = existing.trimEnd().split(/\s+/);
+    const inWords = incoming.trim().split(/\s+/);
+    const maxCheck = Math.min(6, existWords.length, inWords.length);
+    for (let len = maxCheck; len >= 2; len--) {
+      const tail = existWords.slice(-len).join(' ').toLowerCase();
+      const head = inWords.slice(0, len).join(' ').toLowerCase();
+      if (tail === head) {
+        const remainder = inWords.slice(len).join(' ');
+        return remainder ? remainder + ' ' : '';
+      }
+    }
+    return incoming;
+  }
+
+  let currentInterim = '';
+
+  function make() {
+    const r = new SR();
+    // continuous=false: SR zatrzymuje się po każdym zdaniu — zero nakładania
+    r.continuous = false;
+    r.interimResults = true;
+    r.lang = 'pl-PL';
+    r.maxAlternatives = 1;
+
+    r.onresult = e => {
+      let interim = '';
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          const raw = e.results[i][0].transcript.trim();
+          if (!raw) continue;
+          const norm = normTx(raw);
+          // Odrzuć jeśli dokładnie ten sam fragment już był dodany
+          if (committedSet.has(norm)) { console.log('[SR] duplicate blocked:', raw); continue; }
+          committedSet.add(norm);
+          // Ogranicz rozmiar setu — przy bardzo długich sesjach zapobiega wyciekom pamięci
+          if (committedSet.size > 500) {
+            const first = committedSet.values().next().value;
+            committedSet.delete(first);
+          }
+          // Usuń nakładanie się ze stykiem zdania
+          const cleaned = deduplicateBoundary(sessTx, raw + ' ');
+          if (!cleaned.trim()) continue;
+          sessTx += cleaned;
+          sessDirty = true;
+          currentInterim = '';
+          const wc = sessTx.trim().split(/\s+/).filter(Boolean).length;
+          document.getElementById('wcEl').textContent = wc + ' słów';
+          document.getElementById('analyzeBtn').disabled = false;
+        } else {
+          interim += e.results[i][0].transcript;
+        }
+      }
+      currentInterim = interim;
+      renderTx(interim);
+    };
+
+    r.onerror = e => {
+      currentInterim = '';
+      renderTx('');
+      if (e.error === 'not-allowed') { toast('Brak dostępu do mikrofonu', 'err'); stopRec(); }
+      else if (e.error === 'network') toast('Błąd sieci — sprawdź internet', 'err');
+      // no-speech, audio-capture: normalny stan — SR restartuje się w onend
+    };
+
+    r.onend = () => {
+      // Wyczyść interim przy zakończeniu zdania
+      if (currentInterim) { renderTx(''); currentInterim = ''; }
+      // Natychmiast restart — gotowy na kolejne zdanie
+      if (isLive) {
+        rec = make();
+        try { rec.start(); }
+        catch(err) { /* przeglądarka może odrzucić natychmiastowy restart — retry */ setTimeout(() => { if(isLive && rec) rec.start(); }, 150); }
+      }
+    };
+    return r;
+  }
+
+  rec = make(); rec.start(); isLive = true;
+
+  // Zablokuj uśpienie ekranu na czas nagrywania
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(lock => {
+      wakeLock = lock;
+      wakeLock.addEventListener('release', () => {
+        // System może zwolnić lock np. przy przełączeniu zakładki
+        // Przy powrocie do zakładki — odnów automatycznie
+        wakeLock = null;
+      });
+    }).catch(() => {}); // Brak uprawnień lub nieobsługiwane — ignoruj cicho
+  }
+
+  document.getElementById('recBtn').className = 'rec-btn live';
+  document.getElementById('recBtn').textContent = '⏹';
+  document.getElementById('recRing').classList.add('on');
+  document.getElementById('livePill').style.display = 'flex';
+  document.getElementById('waveEl').style.display = 'flex';
+  document.getElementById('dockLabel').textContent = 'Nagrywanie…';
+
+  timerInt = setInterval(() => {
+    sessElapsed++;
+    document.getElementById('timerEl').textContent = fmt(sessElapsed);
+    const di = document.getElementById('durInput');
+    if (di) di.value = Math.round(sessElapsed / 60) || '';
+  }, 1000);
+  autoInt  = setInterval(() => { if (sessTx || sessFree || sessElapsed > 0) saveNow(true); }, 20000);
+}
+
+function stopRec() {
+  if (rec) { rec.onend = null; rec.stop(); rec = null; }
+  clearInterval(timerInt); clearInterval(autoInt);
+  isLive = false;
+  // Zwolnij wake lock — ekran może się znów usypiać
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+  document.getElementById('recBtn').className = 'rec-btn idle';
+  document.getElementById('recBtn').textContent = '🎙';
+  document.getElementById('recRing').classList.remove('on');
+  document.getElementById('livePill').style.display = 'none';
+  document.getElementById('waveEl').style.display = 'none';
+  document.getElementById('dockLabel').textContent = 'Sesja zatrzymana';
+  renderTx();
+  saveNow(true); // async fire-and-forget is fine here — data is already in memory
+}
+
+function renderTx(interim='') {
+  const el = document.getElementById('txEl');
+  if (!sessTx && !interim) {
+    el.className = 'tx-empty';
+    el.innerHTML = 'Naciśnij 🎙 aby nagrywać.<br><br>Połóż telefon na biurku — mikrofon usłyszy Ciebie i głos klienta z głośników.';
+    return;
+  }
+  el.className = 'tx-text';
+  el.innerHTML = esc(sessTx) + (interim ? `<span class="tx-interim"> ${esc(interim)}</span>` : '');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── AI ANALYSIS ──────────────────────────────────
+
+// ═══════════════════════════════════════════════════════
+// PRZEWODNIK KONSULTACJI
+// ═══════════════════════════════════════════════════════
+const GUIDE_SESSIONS = [
+  {
+    num: 1, label: 'Pierwsza konsultacja',
+    sections: [
+      { id:'przywitanie', title:'1. Przywitanie i atmosfera', questions:[
+        'Jak się Pan/Pani czuje na początku tego spotkania?',
+        'Czy to jest Pana/Pani pierwsza konsultacja psychologiczna?',
+        'Czy jest coś, co warto, żebym wiedział już na początku?',
+        'Czy woli Pan/Pani więcej pytań, czy więcej przestrzeni do opowiadania?'
+      ]},
+      { id:'zasady', title:'2. Zasady spotkania', questions:[
+        'Czas trwania spotkania — omówiony',
+        'Poufność rozmowy — wyjaśniona',
+        'Wyjątki od poufności — omówione',
+        'Dobrowolność odpowiedzi — zaznaczona',
+        'Charakter pierwszej konsultacji — wyjaśniony'
+      ]},
+      { id:'powod', title:'3. Powód zgłoszenia', questions:[
+        'Co sprawiło, że zdecydował się Pan/Pani zgłosić właśnie teraz?',
+        'Z czym Pan/Pani przychodzi?',
+        'Co jest obecnie najtrudniejsze?',
+        'Jak długo trwa ta sytuacja?',
+        'Czy był jakiś moment, po którym zrobiło się gorzej?',
+        'Czy ktoś Panu/Pani zasugerował kontakt ze specjalistą?',
+        'Co najbardziej chciałby Pan/Pani zmienić?'
+      ]},
+      { id:'funkcjonowanie', title:'4. Codzienne funkcjonowanie', questions:[
+        'Jak ten problem wpływa na Pana/Pani dzień?',
+        'Co przez ten problem jest trudniejsze niż wcześniej?',
+        'Czy coś Pan/Pani przestał robić? Czego unika?',
+        'Jak wygląda typowy dzień w ostatnim czasie?',
+        'Co się zmieniło w śnie, jedzeniu, energii, koncentracji?',
+        'Jak reaguje ciało, kiedy jest najtrudniej?',
+        'Co widzą inni, kiedy jest z Panem/Panią gorzej?'
+      ]},
+      { id:'historia', title:'5. Historia trudności', questions:[
+        'Kiedy pierwszy raz pojawił się ten problem?',
+        'Czy wcześniej było podobnie?',
+        'Czy były okresy poprawy? Co wtedy pomagało?',
+        'Co pogarsza sytuację?',
+        'Czy problem narasta stopniowo, czy pojawia się falami?',
+        'Czy wiąże Pan/Pani początek trudności z jakimś wydarzeniem?'
+      ]},
+      { id:'emocje', title:'6. Emocje i przeżywanie', questions:[
+        'Jakie emocje najczęściej się pojawiają?',
+        'Która emocja jest najtrudniejsza do zniesienia?',
+        'Czy łatwo Panu/Pani rozpoznawać, co czuje?',
+        'Co Pan/Pani robi, gdy emocje są bardzo silne?',
+        'Jak Pan/Pani mówi do siebie w trudnych momentach?',
+        'Czy jest jakaś emocja, której Pan/Pani szczególnie nie chce czuć?'
+      ]},
+      { id:'mysli', title:'7. Myśli i przekonania', questions:[
+        'Jakie myśli najczęściej pojawiają się w tej sytuacji?',
+        'Co Pan/Pani wtedy myśli o sobie? O innych?',
+        'Czego Pan/Pani się najbardziej obawia?',
+        'Jaki jest najczarniejszy scenariusz?',
+        'Czy pojawia się myśl: „ze mną jest coś nie tak"?'
+      ]},
+      { id:'relacje', title:'8. Relacje i otoczenie', questions:[
+        'Kto wie o Pana/Pani trudnościach?',
+        'Kto jest dla Pana/Pani wsparciem?',
+        'Czy są relacje, które szczególnie Pana/Panią obciążają?',
+        'Czy czuje się Pan/Pani samotny?',
+        'Czy w domu jest bezpiecznie?'
+      ]},
+      { id:'radzenie', title:'9. Dotychczasowe radzenie sobie', questions:[
+        'Co Pan/Pani robi, kiedy jest najtrudniej?',
+        'Co pomaga choćby trochę?',
+        'Czy korzystał Pan/Pani wcześniej z pomocy psychologa lub psychiatry?',
+        'Czy przyjmuje Pan/Pani leki?',
+        'Co sprawiło, że mimo trudności Pan/Pani nadal sobie radzi?'
+      ]},
+      { id:'bezpieczenstwo', title:'10. Ocena bezpieczeństwa', questions:[
+        'Czy zdarza się, że ma Pan/Pani dość życia?',
+        'Czy pojawiają się myśli, że lepiej byłoby nie żyć?',
+        'Czy pojawiały się myśli o zrobieniu sobie krzywdy?',
+        'Czy kiedykolwiek podjął Pan/Pani próbę samobójczą?',
+        'Co Pana/Panią powstrzymuje?'
+      ]},
+      { id:'oczekiwania', title:'11. Oczekiwania klienta', questions:[
+        'Czego Pan/Pani oczekuje od naszych spotkań?',
+        'Co musiałoby się wydarzyć, żeby uznał Pan/Pani, że pomoc ma sens?',
+        'Czego Pan/Pani nie chce w tej współpracy?',
+        'Czy ma Pan/Pani jakieś obawy przed pomocą psychologiczną?'
+      ]}
+    ]
+  },
+  {
+    num: 2, label: 'Pogłębienie problemu',
+    sections: [
+      { id:'refleksje', title:'Refleksje po pierwszym spotkaniu', questions:[
+        'Co zostało w Panu/Pani po pierwszym spotkaniu?',
+        'Czy po naszej rozmowie coś Pan/Pani zauważył?',
+        'Czy sytuacja od ostatniego spotkania się zmieniła?'
+      ]},
+      { id:'mechanizm', title:'Mechanizm trudności', questions:[
+        'Kiedy w ostatnich dniach było najtrudniej?',
+        'Co dokładnie się wtedy wydarzyło?',
+        'Co Pan/Pani pomyślał? Co Pan/Pani poczuł?',
+        'Co zrobiło ciało?',
+        'Co Pan/Pani zrobił potem?',
+        'Co przyniosło ulgę? Co pogorszyło sytuację?',
+        'Czy ten schemat powtarza się też w innych momentach?'
+      ]}
+    ]
+  },
+  {
+    num: 3, label: 'Schematy i powtarzalność',
+    sections: [
+      { id:'schematy', title:'Schematy zachowań', questions:[
+        'Czy ta sytuacja coś Panu/Pani przypomina?',
+        'Czy podobne uczucia zna Pan/Pani z wcześniejszych etapów życia?',
+        'W jakich relacjach czuje się Pan/Pani podobnie?',
+        'Jak zwykle reaguje Pan/Pani na napięcie?',
+        'Czy częściej Pan/Pani walczy, ucieka, zamiera, dostosowuje się czy kontroluje?',
+        'Co jest dla Pana/Pani najtrudniejsze w proszeniu o pomoc?',
+        'Jaki schemat chciałby Pan/Pani przerwać?'
+      ]}
+    ]
+  },
+  {
+    num: 4, label: 'Zasoby i regulacja emocji',
+    sections: [
+      { id:'zasoby', title:'Zasoby i strategie', questions:[
+        'Co pomaga Panu/Pani przetrwać trudniejszy dzień?',
+        'Kiedy ostatnio było choć trochę lepiej? Co wtedy było inaczej?',
+        'Jakie osoby działają na Pana/Panią wspierająco?',
+        'Jakie aktywności dają choć minimalną ulgę?',
+        'Co działa na ciało: ruch, sen, oddech, spacer, cisza, muzyka?',
+        'Jak rozpoznaje Pan/Pani, że napięcie rośnie?',
+        'Co można zrobić wcześniej, zanim emocje osiągną maksimum?',
+        'Jakie małe działanie byłoby realne w tym tygodniu?'
+      ]}
+    ]
+  },
+  {
+    num: 5, label: 'Relacje i granice',
+    sections: [
+      { id:'granice', title:'Relacje i stawianie granic', questions:[
+        'W których relacjach czuje się Pan/Pani sobą?',
+        'Przy kim Pan/Pani się napina?',
+        'Komu trudno odmówić?',
+        'Kiedy Pan/Pani mówi „tak", choć w środku czuje „nie"?',
+        'Czego Pan/Pani boi się, gdy stawia granice?',
+        'Jak reagują inni, kiedy Pan/Pani mówi o swoich potrzebach?',
+        'Jak wyglądałaby jedna zdrowa granica do postawienia w najbliższym czasie?'
+      ]}
+    ]
+  },
+  {
+    num: 6, label: 'Praca z przekonaniami',
+    sections: [
+      { id:'przekonania', title:'Przekonania i myśli automatyczne', questions:[
+        'Jakie zdanie najczęściej mówi Pan/Pani do siebie w trudnych chwilach?',
+        'Skąd Pan/Pani zna to zdanie? Czyj głos ono przypomina?',
+        'Czy ta myśl jest faktem, interpretacją czy lękiem?',
+        'Co powiedziałby Pan/Pani komuś bliskiemu, gdyby myślał o sobie w taki sposób?',
+        'Co Pan/Pani traci, wierząc w tę myśl?',
+        'Co mogłoby się zmienić, gdyby ta myśl miała mniejszą władzę?'
+      ]}
+    ]
+  },
+  {
+    num: 7, label: 'Cele i zmiana',
+    sections: [
+      { id:'cele', title:'Wyznaczanie celów', questions:[
+        'Po czym Pan/Pani pozna, że jest lepiej?',
+        'Co ma się zmienić w zachowaniu? W emocjach? W relacjach?',
+        'Co jest celem minimum? Co byłoby celem idealnym?',
+        'Co jest realne w ciągu najbliższego tygodnia?',
+        'Co może przeszkodzić? Jak się na to przygotować?'
+      ]}
+    ]
+  },
+  {
+    num: 8, label: 'Monitorowanie postępów',
+    sections: [
+      { id:'postepy', title:'Monitoring i ewaluacja', questions:[
+        'Co od ostatniego spotkania było lepsze?',
+        'Co było trudniejsze?',
+        'Co Pan/Pani zrobił inaczej niż zwykle?',
+        'Co zadziałało? Co nie zadziałało?',
+        'Czy pojawiły się nowe wnioski?',
+        'Czy cel nadal jest aktualny?',
+        'Co warto kontynuować? Co będzie zadaniem na najbliższy tydzień?'
+      ]}
+    ]
+  }
+];
+
+const GUIDE_FORM_FIELDS = [
+  { id:'powod_zgl', label:'Główny powód zgłoszenia', type:'textarea' },
+  { id:'czas_trudnosci', label:'Czas trwania trudności', type:'text' },
+  { id:'objawy', label:'Najważniejsze objawy', type:'textarea' },
+  { id:'ryzyko', label:'Ryzyko autoagresji / samobójstwa', type:'select', opts:['Brak','Myśli pasywne','Myśli aktywne bez planu','Plan bez środków','Plan ze środkami — INTERWENCJA'] },
+  { id:'zasoby_kl', label:'Zasoby klienta', type:'textarea' },
+  { id:'oczekiwania_kl', label:'Oczekiwania klienta', type:'textarea' },
+  { id:'hipoteza', label:'Wstępna hipoteza robocza', type:'textarea' },
+  { id:'plan', label:'Ustalony plan', type:'textarea' },
+  { id:'zadanie', label:'Zadanie / temat na kolejne spotkanie', type:'text' }
+];
+
+let guideClientId = null;
+let guideSessNum = 1;
+
+function openGuide(clientId) {
+  guideClientId = clientId;
+  const c = DB.clients.find(x=>x.id===clientId); if(!c) return;
+  const sessCount = DB.sessions.filter(s=>s.client_id===clientId).length;
+  guideSessNum = Math.min(Math.max(sessCount, 1), 8);
+  renderGuide();
+  openOv('ov-guide');
+  // Delegacja zdarzeń — działa po każdym renderGuide
+  const el = document.getElementById('guideContent');
+  el.addEventListener('change', function(e) {
+    if (e.target.classList.contains('guide-chk')) {
+      guideToggle(e.target.dataset.sec, parseInt(e.target.dataset.idx), e.target.checked);
+    }
+    if (e.target.classList.contains('guide-form-field')) {
+      guideFormInput(e.target.dataset.fid, e.target.value);
+    }
+  });
+  el.addEventListener('input', function(e) {
+    if (e.target.classList.contains('guide-note')) {
+      guideNoteInput(e.target.dataset.sec, e.target.value);
+    }
+    if (e.target.classList.contains('guide-form-field') && e.target.tagName !== 'SELECT') {
+      guideFormInput(e.target.dataset.fid, e.target.value);
+    }
+  });
+}
+
+function renderGuide() {
+  const c = DB.clients.find(x=>x.id===guideClientId); if(!c) return;
+  const guide = c.guide || {};
+  const sessKey = 's'+guideSessNum;
+  const sessData = guide[sessKey] || { checked:{}, notes:{}, form:{} };
+  const sess = GUIDE_SESSIONS.find(s=>s.num===guideSessNum) || GUIDE_SESSIONS[0];
+
+  // Postęp
+  let totalQ=0, checkedQ=0;
+  sess.sections.forEach(sec => { totalQ+=sec.questions.length; checkedQ+=(sessData.checked[sec.id]||[]).length; });
+  const pct = totalQ ? Math.round(checkedQ/totalQ*100) : 0;
+
+  // Przyciski wyboru spotkania
+  let btnHtml = '';
+  GUIDE_SESSIONS.forEach(s => {
+    const sk = 's'+s.num;
+    const sd = guide[sk]||{};
+    const sc = s.sections.reduce((a,sec)=>a+(sd.checked&&sd.checked[sec.id]?sd.checked[sec.id].length:0),0);
+    const sq = s.sections.reduce((a,sec)=>a+sec.questions.length,0);
+    const done = sc===sq && sq>0;
+    const active = s.num===guideSessNum;
+    const bg = active ? 'var(--green)' : 'transparent';
+    const col = active ? '#fff' : 'var(--text)';
+    const brd = active ? 'var(--green)' : 'var(--border)';
+    btnHtml += '<button onclick="guideSessNum='+s.num+';renderGuide()" style="padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid '+brd+';background:'+bg+';color:'+col+'">'+(done?'✓ ':'')+' Spot. '+s.num+'</button>';
+  });
+
+  // Sekcje z pytaniami
+  let sectHtml = '';
+  sess.sections.forEach(sec => {
+    const checked = sessData.checked[sec.id] || [];
+    const note = sessData.notes[sec.id] || '';
+    let qHtml = '';
+    sec.questions.forEach((q,i) => {
+      const chk = checked.includes(i);
+      const bg = chk ? 'var(--green-bg)' : 'transparent';
+      const col = chk ? 'var(--green)' : 'var(--text)';
+      const td = chk ? 'text-decoration:line-through;opacity:.7' : '';
+      const sid = sec.id;
+      qHtml += '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:4px 6px;border-radius:7px;background:'+bg+';transition:.2s">'
+             + '<input type="checkbox" '+(chk?'checked':'')+' data-sec="'+sid+'" data-idx="'+i+'" class="guide-chk" style="margin-top:2px;accent-color:var(--green);flex-shrink:0">'
+             + '<span style="font-size:12px;color:'+col+';line-height:1.5;'+td+'">'+esc(q)+'</span>'
+             + '</label>';
+    });
+    sectHtml += '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px">'
+              + '<div style="font-weight:700;font-size:12px;color:var(--text);margin-bottom:8px">'+esc(sec.title)+'</div>'
+              + '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">'+qHtml+'</div>'
+              + '<textarea data-sec="'+sec.id+'" class="guide-note" placeholder="Notatka do tej sekcji…" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;color:var(--text);background:var(--white);resize:vertical;min-height:52px;outline:none">'+esc(note)+'</textarea>'
+              + '</div>';
+  });
+
+  // Mini formularz
+  let formHtml = '';
+  GUIDE_FORM_FIELDS.forEach(f => {
+    const val = sessData.form[f.id] || '';
+    if (f.type==='select') {
+      const danger = val && val !== 'Brak';
+      const brdCol = danger ? 'var(--live)' : 'var(--border)';
+      const bgCol = danger && val.includes('INTERWENCJA') ? '#fef0f0' : danger && val.includes('plan') ? '#FDF5EE' : 'var(--white)';
+      let opts = '';
+      f.opts.forEach(o => { opts += '<option'+(val===o?' selected':'')+'>'+esc(o)+'</option>'; });
+      formHtml += '<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+esc(f.label)+'</div>'
+               + '<select data-fid="'+f.id+'" class="guide-form-field" style="width:100%;padding:6px 9px;border:1px solid '+brdCol+';border-radius:8px;font-size:12px;background:'+bgCol+';color:var(--text)">'+opts+'</select></div>';
+    } else if (f.type==='textarea') {
+      formHtml += '<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+esc(f.label)+'</div>'
+               + '<textarea data-fid="'+f.id+'" class="guide-form-field" placeholder="…" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;color:var(--text);background:var(--white);resize:vertical;min-height:60px;outline:none">'+esc(val)+'</textarea></div>';
+    } else {
+      formHtml += '<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+esc(f.label)+'</div>'
+               + '<input type="text" data-fid="'+f.id+'" class="guide-form-field" value="'+esc(val)+'" placeholder="…" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;color:var(--text);background:var(--white);outline:none"></div>';
+    }
+  });
+
+  const html = '<div style="padding:16px;display:flex;flex-direction:column;height:100%;box-sizing:border-box">'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+    + '<div style="font-size:20px">🗂</div>'
+    + '<div style="flex:1"><div style="font-weight:700;font-size:15px;color:var(--text)">Przewodnik konsultacji</div><div style="font-size:12px;color:var(--muted)">'+esc(maskName(c.name))+'</div></div>'
+    + '<button onclick="closeOv(null,\'ov-guide\')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>'
+    + '</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+btnHtml+'</div>'
+    + '<div style="background:var(--border);border-radius:10px;height:6px;margin-bottom:4px"><div class="guide-progress-bar" style="background:var(--green);border-radius:10px;height:6px;width:'+pct+'%;transition:.3s"></div></div>'
+    + '<div class="guide-progress-lbl" style="font-size:10px;color:var(--muted);margin-bottom:14px">'+esc(sess.label)+' · odhaczono '+checkedQ+' z '+totalQ+' pytań</div>'
+    + '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px">'
+    + sectHtml
+    + '<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px">'
+    + '<div style="font-weight:700;font-size:12px;color:var(--text);margin-bottom:10px">📋 Notatka po spotkaniu</div>'
+    + formHtml
+    + '<button onclick="exportGuide()" style="width:100%;margin-top:6px;padding:9px;border:none;border-radius:9px;background:var(--green);color:#fff;font-size:13px;font-weight:600;cursor:pointer">⬇ Eksportuj notatkę ze spotkania</button>'
+    + '</div>'
+    + '<div style="height:16px"></div>'
+    + '</div></div>';
+
+  document.getElementById('guideContent').innerHTML = html;
+}
+
+function guideToggle(secId, qIdx, checked) {
+  const c = DB.clients.find(x=>x.id===guideClientId); if(!c) return;
+  if (!c.guide) c.guide = {};
+  const sk = 's'+guideSessNum;
+  if (!c.guide[sk]) c.guide[sk] = { checked:{}, notes:{}, form:{} };
+  const arr = c.guide[sk].checked[secId] || [];
+  if (checked && !arr.includes(qIdx)) arr.push(qIdx);
+  if (!checked) { const i = arr.indexOf(qIdx); if(i>-1) arr.splice(i,1); }
+  c.guide[sk].checked[secId] = arr;
+  saveDB();
+  if (SB) sbUpd('clients', guideClientId, {guide: c.guide}).catch(()=>{});
+  // Odśwież tylko pasek postępu bez rerenderowania całości
+  const sess = GUIDE_SESSIONS.find(s=>s.num===guideSessNum);
+  const sessData = c.guide[sk];
+  let totalQ=0, checkedQ=0;
+  sess.sections.forEach(sec => { totalQ+=sec.questions.length; checkedQ+=(sessData.checked[sec.id]||[]).length; });
+  const pct = Math.round(checkedQ/totalQ*100);
+  const bar = document.querySelector('#ov-guide .guide-progress-bar');
+  const lbl = document.querySelector('#ov-guide .guide-progress-lbl');
+  if(bar) bar.style.width = pct+'%';
+  if(lbl) lbl.textContent = sess.label+' · odhaczono '+checkedQ+' z '+totalQ+' pytań';
+}
+
+let guideNoteTimer = {};
+function guideNoteInput(secId, val) {
+  const c = DB.clients.find(x=>x.id===guideClientId); if(!c) return;
+  if(!c.guide) c.guide={};
+  const sk='s'+guideSessNum;
+  if(!c.guide[sk]) c.guide[sk]={checked:{},notes:{},form:{}};
+  c.guide[sk].notes[secId] = val;
+  clearTimeout(guideNoteTimer[secId]);
+  guideNoteTimer[secId] = setTimeout(()=>{ saveDB(); if(SB){ const cl=DB.clients.find(x=>x.id===guideClientId); if(cl) sbUpd('clients',guideClientId,{guide:cl.guide}).catch(()=>{}); }}, 1000);
+}
+
+let guideFormTimer = {};
+function guideFormInput(fieldId, val) {
+  const c = DB.clients.find(x=>x.id===guideClientId); if(!c) return;
+  if(!c.guide) c.guide={};
+  const sk='s'+guideSessNum;
+  if(!c.guide[sk]) c.guide[sk]={checked:{},notes:{},form:{}};
+  c.guide[sk].form[fieldId] = val;
+  clearTimeout(guideFormTimer[fieldId]);
+  guideFormTimer[fieldId] = setTimeout(()=>{ saveDB(); if(SB){ const cl=DB.clients.find(x=>x.id===guideClientId); if(cl) sbUpd('clients',guideClientId,{guide:cl.guide}).catch(()=>{}); }}, 1000);
+}
+
+function exportGuide() {
+  const c = DB.clients.find(x=>x.id===guideClientId); if(!c) return;
+  const sk = 's'+guideSessNum;
+  const data = c.guide && c.guide[sk] ? c.guide[sk] : {};
+  const sess = GUIDE_SESSIONS.find(s=>s.num===guideSessNum);
+  const d = new Date().toLocaleDateString('pl-PL',{day:'numeric',month:'long',year:'numeric'});
+  const line = '─'.repeat(50);
+  let txt = 'PSYCHNOTE — NOTATKA ZE SPOTKANIA\n'
+          + 'Klient: ' + maskName(c.name) + '\n'
+          + 'Spotkanie: ' + sess.num + ' — ' + sess.label + '\n'
+          + 'Data eksportu: ' + d + '\n'
+          + line + '\n\n';
+
+  sess.sections.forEach(sec => {
+    const checked = (data.checked && data.checked[sec.id] ? data.checked[sec.id] : []).map(i=>sec.questions[i]);
+    const note = data.notes && data.notes[sec.id] ? data.notes[sec.id] : '';
+    if (checked.length || note) {
+      txt += '## ' + sec.title + '\n';
+      checked.forEach(q => { txt += '  ✓ ' + q + '\n'; });
+      if (note) txt += '  Notatka: ' + note + '\n';
+      txt += '\n';
+    }
+  });
+
+  if (data.form && Object.keys(data.form).length) {
+    txt += line + '\nNOTATKA PO SPOTKANIU\n\n';
+    GUIDE_FORM_FIELDS.forEach(f => {
+      const val = data.form[f.id];
+      if (val && val !== 'Brak') txt += f.label + ':\n' + val + '\n\n';
+    });
+  }
+
+  download('psychnote_spotkanie_' + guideSessNum + '_' + maskName(c.name).replace(/\s+/g,'_') + '.txt', txt, 'text/plain');
+}
+
+
+// Obsłuż import z rozszerzenia Chrome (wspólny dla boot i bootAfterUnlock)
+function handleExtensionImport() {
+  const params = new URLSearchParams(window.location.search);
+  const importTx = params.get('tx');
+  const importNotes = params.get('notes');
+  const fromExt = params.get('from') === 'ext';
+  if (fromExt && typeof chrome !== 'undefined' && chrome.storage) {
+    window.history.replaceState({}, '', window.location.pathname);
+    chrome.storage.local.get(['pn_import_pending'], d => {
+      if (d.pn_import_pending && (Date.now() - d.pn_import_pending.ts < 60000)) {
+        showImportBanner(d.pn_import_pending.tx, d.pn_import_pending.notes);
+        chrome.storage.local.remove('pn_import_pending');
+      }
+    });
+  } else if (importTx) {
+    window.history.replaceState({}, '', window.location.pathname);
+    try {
+      showImportBanner(importTx, importNotes ? JSON.parse(decodeURIComponent(importNotes)) : null);
+    } catch(e) { showImportBanner(importTx, null); }
+  }
+}
+
+const SYS_NOTES = `Jesteś asystentem psychologa klinicznego. Analizujesz transkrypt sesji. Zwróć TYLKO czysty JSON (bez markdown, bez komentarzy). Pole "ocena" to liczba całkowita 1-10, nie string.
+{"temat_sesji":"tekst","nastroj_klienta":{"ocena":5,"obserwacje":"tekst"},"kluczowe_watki":["tekst"],"mechanizmy_obronne":["tekst"],"przekonania_rdzenne":["tekst"],"zasoby_klienta":["tekst"],"interwencje_terapeutyczne":["tekst"],"zadania_domowe":"tekst lub null","cele_nastepnej_sesji":["tekst"],"notatki_kliniczne":"tekst"}`;
+
+const SYS_ORG = `Jesteś asystentem psychologa. Użytkownik podaje chaotyczne notatki ze sesji. Ułóż je w czytelną, kliniczną strukturę z nagłówkami. Pisz po polsku, zwięźle i profesjonalnie.`;
+
+async function doAnalyze() {
+  if (!sessTx.trim() || sessTx.length < 20) { toast('Za mało tekstu', 'err'); return; }
+  if (!API_KEY) { toast('Brak klucza API', 'err'); return; }
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const txClean = cleanTranscriptForAI(sessTx);
+    const MAX_TX = 40000; // ~30 000 tokens — safe limit for Haiku
+    if (txClean.length > MAX_TX) {
+      btn.disabled = false; btn.innerHTML = '🧠 Analizuj';
+      const cont = confirm('Transkrypt jest bardzo długi (' + Math.round(txClean.length/1000) + 'k znaków). Analiza może trwać dłużej i kosztować więcej.\n\nCzy kontynuować?');
+      if (!cont) return;
+      btn.disabled = true; btn.innerHTML = '<div class="spin"></div>';
+    }
+    const r = await callAI(SYS_NOTES, 'Transkrypt:\n\n'+txClean);
+    let parsed;
+    try { parsed = JSON.parse(r); }
+    catch { const m = r.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); }
+    if (parsed) { sessNotes = parsed; sessDirty = true; await saveNow(true); renderNotes(); switchTab('notes'); toast('✅ Notatki gotowe!', 'ok'); }
+  } catch(e) { toast('Błąd AI: '+e.message.slice(0,50), 'err'); }
+  finally { btn.disabled = false; btn.innerHTML = '🧠 Analizuj'; }
+}
+
+async function organizeNotes() {
+  const txt = document.getElementById('freeInput').value.trim();
+  if (!txt) { toast('Wpisz notatki', 'err'); return; }
+  if (!API_KEY) { toast('Brak klucza API', 'err'); return; }
+  // Warn if existing organized notes would be overwritten
+  if (sessOrg && sessOrg.trim()) {
+    if (!confirm('Notatki uporządkowane już istnieją.\n\nCzy nadpisać je nową wersją AI?')) return;
+  }
+  sessFree = txt;
+  const btn = document.getElementById('organizeBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div>';
+  try {
+    const r = await callAI(SYS_ORG, txt);
+    sessOrg = r;
+    document.getElementById('organizedText').value = r;
+    document.getElementById('organizedOut').style.display = 'block';
+    await saveNow(true);
+    toast('✅ Notatki uporządkowane!', 'ok');
+  } catch(e) { toast('Błąd AI: '+e.message.slice(0,50), 'err'); }
+  finally { btn.disabled = false; btn.innerHTML = '🧠 Uporządkuj AI'; }
+}
+
+// ═══════════════════════════════════════════════════
+// CZYSZCZENIE TRANSKRYPTU PRZED ANALIZĄ AI
+// Nie modyfikuje sessTx — zwraca oczyszczoną kopię
+// ═══════════════════════════════════════════════════
+function cleanTranscriptForAI(tx) {
+  if (!tx) return tx;
+
+  // 1. Podziel na słowa
+  let words = tx.trim().split(/\s+/);
+
+  // 2. Usuń bezpośrednie powtórzenia słów (np. "i i i", "że że")
+  //    Zachowaj maksymalnie jedno wystąpienie z rzędu
+  const deRepeat = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i].toLowerCase().replace(/[.,!?;:]+$/, '');
+    const prev = deRepeat.length > 0
+      ? deRepeat[deRepeat.length-1].toLowerCase().replace(/[.,!?;:]+$/, '')
+      : null;
+    if (w !== prev) deRepeat.push(words[i]);
+  }
+  words = deRepeat;
+
+  // 3. Usuń powtarzające się frazy (2-6 słów) — np. "idzie do domu idzie do domu"
+  //    Pre-normalizuj słowa raz (nie per-comparison) dla O(n) per phraseLen
+  const normed = words.map(w => w.toLowerCase().replace(/[.,!?;:]+$/, ''));
+  for (let phraseLen = 6; phraseLen >= 2; phraseLen--) {
+    let i = 0;
+    const cleaned = [];
+    const cleanedNorm = [];
+    while (i < words.length) {
+      if (i + phraseLen * 2 <= words.length) {
+        // Porównaj pre-normalizowane frazy (bez alokacji per-comparison)
+        let match = true;
+        for (let k = 0; k < phraseLen; k++) {
+          if (normed[i + k] !== normed[i + phraseLen + k]) { match = false; break; }
+        }
+        if (match) {
+          cleaned.push(...words.slice(i, i + phraseLen));
+          cleanedNorm.push(...normed.slice(i, i + phraseLen));
+          i += phraseLen * 2;
+          continue;
+        }
+      }
+      cleaned.push(words[i]);
+      cleanedNorm.push(normed[i]);
+      i++;
+    }
+    words = cleaned;
+    normed.length = 0; normed.push(...cleanedNorm);
+  }
+
+  // 4. Złącz z powrotem w tekst
+  return words.join(' ');
+}
+
+async function callAI(system, user) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000); // 30s timeout
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      signal: ctrl.signal,
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,system,messages:[{role:'user',content:user}]})
+    });
+    if (!r.ok) {
+      let msg = `HTTP ${r.status}`;
+      try { const e = await r.json(); msg = e.error?.message || msg; } catch {}
+      throw new Error(msg);
+    }
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return (d.content||[]).map(b=>b.text||'').join('');
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('Przekroczono czas oczekiwania (30s) — spróbuj ponownie');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+let sessMood = 5;
+let sessTags = [];
+
+const TAG_SUGGESTIONS = ['kryzys','przełom','praca domowa','opór','wgląd','trauma','rodzina','związek','praca','żałoba','lęk','depresja','granice','postęp'];
+
+function updateMoodDisplay() {
+  const v = parseInt(document.getElementById('moodSlider').value);
+  sessMood = v;
+  const el = document.getElementById('moodVal');
+  if (el) {
+    el.textContent = v;
+    const col = v <= 3 ? 'var(--live)' : v <= 6 ? 'var(--warm)' : 'var(--green)';
+    el.style.color = col;
+    document.getElementById('moodSlider').style.accentColor = col;
+  }
+  sessDirty = true;
+  // Debounce — don't hammer Supabase on every slider tick
+  clearTimeout(window._moodSaveT);
+  window._moodSaveT = setTimeout(() => saveNow(true), 600);
+}
+
+function renderTagsUI() {
+  const disp = document.getElementById('tagsDisplay');
+  const sugg = document.getElementById('tagSuggestions');
+  if (disp) disp.innerHTML = sessTags.map(t =>
+    `<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:var(--green-bg);border:1px solid var(--green-ll);border-radius:20px;font-size:11px;color:var(--green);font-weight:600">
+      ${esc(t)}<span onclick="removeTag(this.dataset.tag)" data-tag="${esc(t).replace(/"/g,'&quot;')}" style="cursor:pointer;opacity:.6;margin-left:2px">✕</span>
+    </span>`).join('');
+  if (sugg) {
+    const unused = TAG_SUGGESTIONS.filter(t => !sessTags.includes(t));
+    sugg.innerHTML = unused.slice(0,6).map(t =>
+      `<span onclick="addTagDirect(this.dataset.tag)" data-tag="${esc(t)}" style="padding:2px 7px;border:1px dashed var(--border);border-radius:20px;font-size:10px;color:var(--muted);cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">${esc(t)}</span>`
+    ).join('');
+  }
+}
+
+function addTag() {
+  const inp = document.getElementById('tagInput');
+  const val = inp.value.trim().toLowerCase();
+  if (!val || sessTags.includes(val)) { inp.value=''; return; }
+  sessTags.push(val);
+  inp.value = '';
+  sessDirty = true;
+  renderTagsUI();
+  saveNow(true);
+}
+
+function addTagDirect(tag) {
+  const t = tag.toLowerCase();
+  if (!sessTags.includes(t)) { sessTags.push(t); sessDirty = true; renderTagsUI(); saveNow(true); }
+}
+
+function removeTag(tag) {
+  sessTags = sessTags.filter(t => t !== tag);
+  sessDirty = true;
+  renderTagsUI();
+  saveNow(true);
+}
+function saveFree() {
+  sessFree = document.getElementById('freeInput').value;
+  sessDirty = true;
+  saveNow(true);
+  toast('Notatki zapisane', 'ok');
+}
+
+async function saveNow(silent=false) {
+  if (!curSessId) return;
+  const i = DB.sessions.findIndex(s=>s.id===curSessId); if(i<0) return;
+  const data = {transcript:sessTx, notes:sessNotes, free_notes:sessFree, organized_notes:sessOrg, duration_sec:sessElapsed, mood:sessMood, tags:sessTags, deep_cache:sessDeepCache||null};
+  DB.sessions[i] = {...DB.sessions[i], ...data};
+  try {
+    await saveDB();
+  } catch(e) {
+    toast('⚠️ Błąd zapisu lokalnego: '+e.message.slice(0,40), 'err');
+    return;
+  }
+  // deep_cache is local-only — don't send to Supabase (column doesn't exist)
+  const {deep_cache: _skip, ...supaData} = data;
+  await sbUpd('sessions', curSessId, supaData);
+  if (!silent) {
+    const el = document.getElementById('saveStatus');
+    if (el) { el.textContent='Zapisano ✓'; setTimeout(()=>{ if(el) el.textContent=''; },2000); }
+  }
+}
+
+function openEndSession() { if(isLive||sessDirty) openOv('ov-end'); else endSession(); }
+
+async function endSession() {
+  closeOv(null,'ov-end');
+  if (isLive) stopRec();
+  // Delete session if it's completely empty (user pressed Back immediately after "New Session")
+  const isEmpty = !sessTx.trim() && !sessFree.trim() && !sessOrg.trim() && !sessNotes && sessElapsed === 0;
+  if (isEmpty && curSessId) {
+    DB.sessions = DB.sessions.filter(s => s.id !== curSessId);
+    await saveDB();
+    if (SB) { try { await SB.from('sessions').delete().eq('id', curSessId); } catch {} }
+  } else {
+    await saveNow(true);
+  }
+  sessDirty = false;
+  if (sessOpenedFrom === 'home') {
+    showPanel('home');
+    renderSidebar();
+  } else {
+    showPanel('client'); renderClientDetail(); renderSidebar(curClientId);
+  }
+}
+
+// ─── RENDER NOTES ──────────────────────────────────
+function renderNotes() {
+  notesEditMode = false;
+  const toolbar = document.getElementById('notesToolbar');
+  const el = document.getElementById('notesArea');
+  if (!sessNotes) {
+    if (toolbar) toolbar.style.display = 'none';
+    el.innerHTML = `<div class="empty"><div class="ico">🌿</div><h3>Brak notatek</h3><p>Nagraj sesję, a potem naciśnij "Analizuj" — AI wygeneruje notatki kliniczne.</p></div>`;
+    return;
+  }
+  if (toolbar) toolbar.style.display = 'flex';
+  const btn = document.getElementById('editNotesBtn');
+  if (btn) { btn.textContent = '✏️ Edytuj notatki'; btn.style.color='var(--muted)'; btn.style.borderColor='var(--border)'; }
+  const n = sessNotes; el.innerHTML = '';  const add = (title, cls, html) => {
+    const d = document.createElement('div');
+    d.className = 'note-card fadeup '+(cls||'');
+    d.innerHTML = `<div class="card-label">${title}</div>${html}`;
+    el.appendChild(d);
+  };
+  if(n.temat_sesji) add('🎯 Temat sesji','',`<div class="note-text">${esc(n.temat_sesji)}</div>`);
+  if(n.nastroj_klienta){
+    const v=parseInt(n.nastroj_klienta.ocena)||5, pct=v*10;
+    const col=v<=3?'var(--live)':v<=6?'var(--warm)':'var(--green-l)';
+    add('💭 Nastrój','warm',`<div class="mood-row"><div class="mood-tr"><div class="mood-f" style="width:${pct}%;background:${col}"></div></div><span class="mood-v" style="color:${col}">${esc(n.nastroj_klienta.ocena)}</span></div>${n.nastroj_klienta.obserwacje?`<div class="note-sub">${esc(n.nastroj_klienta.obserwacje)}</div>`:''}`);
+  }
+  if(arr(n.kluczowe_watki)) add('🔗 Kluczowe wątki','',`<div class="pills">${n.kluczowe_watki.map(w=>`<span class="pill">${esc(w)}</span>`).join('')}</div>`);
+  if(arr(n.mechanizmy_obronne)) add('🛡 Mechanizmy obronne','purple',`<div class="pills">${n.mechanizmy_obronne.map(m=>`<span class="pill p">${esc(m)}</span>`).join('')}</div>`);
+  if(arr(n.przekonania_rdzenne)) add('🧩 Przekonania rdzenne','warm',`<div>${n.przekonania_rdzenne.map(p=>`<div class="belief">${esc(p)}</div>`).join('')}</div>`);
+  if(arr(n.zasoby_klienta)) add('✨ Zasoby','',`<div class="pills">${n.zasoby_klienta.map(z=>`<span class="pill">${esc(z)}</span>`).join('')}</div>`);
+  if(arr(n.interwencje_terapeutyczne)) add('🔧 Interwencje','blue',`<div>${n.interwencje_terapeutyczne.map(it=>`<div class="srow"><span class="snum">◆</span>${esc(it)}</div>`).join('')}</div>`);
+  if(n.zadania_domowe&&n.zadania_domowe!=='null') add('📋 Zadanie domowe','warm',`<div class="note-text">${esc(n.zadania_domowe)}</div>`);
+  if(arr(n.cele_nastepnej_sesji)) add('➡️ Następna sesja','',`<div>${n.cele_nastepnej_sesji.map((c,i)=>`<div class="srow"><span class="snum">${i+1}.</span>${esc(c)}</div>`).join('')}</div>`);
+  if(n.notatki_kliniczne&&n.notatki_kliniczne!=='null') add('🔬 Notatki kliniczne','muted',`<div class="note-sub" style="font-style:italic">${esc(n.notatki_kliniczne)}</div>`);
+
+  // Deep analysis section
+  const deep = document.createElement('div');
+  deep.className = 'deep-section fadeup';
+  deep.innerHTML = `
+    <div class="deep-title">🔍 Pogłębiona analiza — wybierz perspektywę</div>
+    <div class="deep-btns">
+      <button class="deep-btn" data-lens="relacja" data-label="🤝 Relacja terapeutyczna" onclick="doDeepAnalysis('relacja', this)">🤝 Relacja terapeutyczna</button>
+      <button class="deep-btn" data-lens="momenty" data-label="⚡ Momenty zwrotne" onclick="doDeepAnalysis('momenty', this)">⚡ Momenty zwrotne</button>
+      <button class="deep-btn" data-lens="superwizja" data-label="👁 Pytania do superwizji" onclick="doDeepAnalysis('superwizja', this)">👁 Pytania do superwizji</button>
+      <button class="deep-btn" data-lens="hipotezy" data-label="💡 Hipotezy robocze" onclick="doDeepAnalysis('hipotezy', this)">💡 Hipotezy robocze</button>
+      <button class="deep-btn" data-lens="eksploracja" data-label="🗺 Co eksplorować dalej" onclick="doDeepAnalysis('eksploracja', this)">🗺 Co eksplorować dalej</button>
+    </div>
+    <div id="deepResult" style="display:none" class="deep-result">
+      <div class="deep-result-title" id="deepResultTitle"></div>
+      <div class="deep-result-text" id="deepResultText"></div>
+    </div>`;
+  el.appendChild(deep);
+  // Restore cached deep analysis if exists
+  if (sessDeepCache) {
+    document.getElementById('deepResultTitle').textContent = sessDeepCache.title;
+    document.getElementById('deepResultText').textContent = sessDeepCache.text;
+    document.getElementById('deepResult').style.display = 'block';
+    const activeBtn = deep.querySelector(`[data-lens="${sessDeepCache.lens}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// NOTES EDIT MODE
+// ═══════════════════════════════════════════════════
+let notesEditMode = false;
+
+function toggleNotesEdit() {
+  notesEditMode = !notesEditMode;
+  const btn = document.getElementById('editNotesBtn');
+  if (notesEditMode) {
+    btn.textContent = '💾 Zapisz zmiany';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    renderNotesEditMode();
+  } else {
+    // Collect edits and save
+    collectNotesEdits();
+    btn.textContent = '✏️ Edytuj notatki';
+    btn.style.color = 'var(--muted)';
+    btn.style.borderColor = 'var(--border)';
+    renderNotes();
+    saveNow(true);
+    toast('Notatki zaktualizowane ✓', 'ok');
+  }
+}
+
+function renderNotesEditMode() {
+  const el = document.getElementById('notesArea');
+  if (!sessNotes) return;
+  const n = sessNotes;
+  const field = (label, key, isArray, subkey) => {
+    const val = isArray
+      ? (n[key]||[]).join('\n')
+      : subkey ? (n[key]?.[subkey]||'') : (n[key]||'');
+    const dataAttr = subkey ? `data-key="${key}" data-sub="${subkey}"` : `data-key="${key}"`;
+    const rows = isArray ? Math.max(2, (val.split('\n').length + 1)) : 3;
+    return `<div class="note-card" style="margin-bottom:10px">
+      <div class="card-label">${label}</div>
+      <textarea ${dataAttr} class="edit-note-ta" rows="${rows}" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;line-height:1.6;resize:vertical;outline:none">${esc(val)}</textarea>
+      ${isArray ? '<div style="font-size:11px;color:var(--muted);margin-top:4px">Każda pozycja w osobnej linii</div>' : ''}
+    </div>`;
+  };
+  el.innerHTML =
+    field('🎯 Temat sesji', 'temat_sesji', false) +
+    field('💭 Nastrój — ocena (1-10)', 'nastroj_klienta', false, 'ocena') +
+    field('💭 Nastrój — obserwacje', 'nastroj_klienta', false, 'obserwacje') +
+    field('🔗 Kluczowe wątki', 'kluczowe_watki', true) +
+    field('🛡 Mechanizmy obronne', 'mechanizmy_obronne', true) +
+    field('🧩 Przekonania rdzenne', 'przekonania_rdzenne', true) +
+    field('✨ Zasoby klienta', 'zasoby_klienta', true) +
+    field('🔧 Interwencje terapeutyczne', 'interwencje_terapeutyczne', true) +
+    field('📋 Zadanie domowe', 'zadania_domowe', false) +
+    field('➡️ Cele następnej sesji', 'cele_nastepnej_sesji', true) +
+    field('🔬 Notatki kliniczne', 'notatki_kliniczne', false);
+}
+
+function collectNotesEdits() {
+  if (!sessNotes) return;
+  const areas = document.querySelectorAll('.edit-note-ta');
+  areas.forEach(ta => {
+    const key = ta.dataset.key;
+    const sub = ta.dataset.sub;
+    const val = ta.value.trim();
+    if (sub) {
+      if (!sessNotes[key]) sessNotes[key] = {};
+      // Validate mood score — must be integer 1-10
+      if (key === 'nastroj_klienta' && sub === 'ocena') {
+        const num = parseInt(val);
+        sessNotes[key][sub] = (isNaN(num) || num < 1 || num > 10) ? '5' : String(Math.round(num));
+      } else {
+        sessNotes[key][sub] = val;
+      }
+    } else {
+      // Check if field should be array
+      const arrayFields = ['kluczowe_watki','mechanizmy_obronne','przekonania_rdzenne','zasoby_klienta','interwencje_terapeutyczne','cele_nastepnej_sesji'];
+      if (arrayFields.includes(key)) {
+        sessNotes[key] = val.split('\n').map(l=>l.trim()).filter(Boolean);
+      } else {
+        sessNotes[key] = val;
+      }
+    }
+  });
+}
+// ═══════════════════════════════════════════════════
+const DEEP_LENSES = {
+  relacja: {
+    title: '🤝 Relacja terapeutyczna',
+    prompt: `Na podstawie transkryptu sesji przeanalizuj dynamikę relacji terapeutycznej. Opisz:
+1. Jak klient nawiązuje kontakt z terapeutą (ciepło, dystans, testowanie, idealizacja)
+2. Momenty napięcia lub bliskości w relacji
+3. Co klient może przenosić na terapeutę (z innych ważnych relacji)
+4. Co terapeuta mógł czuć w kontakcie z klientem (przeciwprzeniesienie — hipotetycznie)
+5. Jakość przymierza terapeutycznego w tej sesji
+Pisz w języku polskim, klinicznie ale bez żargonu, 200-300 słów.`
+  },
+  momenty: {
+    title: '⚡ Momenty zwrotne sesji',
+    prompt: `Na podstawie transkryptu wskaż kluczowe momenty zwrotne tej sesji:
+1. Momenty kiedy coś wyraźnie "tknęło" klienta — zmiana tonu, pauza, intensywność emocji
+2. Tematy które klient poruszył a potem nagle zmienił temat (unikanie)
+3. Zdania lub słowa które brzmiały szczególnie znacząco
+4. Momenty wglądu lub zaskoczenia
+5. Co według Ciebie było najważniejszym momentem tej sesji i dlaczego
+Pisz w języku polskim, konkretnie odnosząc się do treści rozmowy, 200-300 słów.`
+  },
+  superwizja: {
+    title: '👁 Pytania do superwizji',
+    prompt: `Na podstawie transkryptu sesji wygeneruj pytania i refleksje które warto zabrać na superwizję:
+1. Co było najtrudniejsze lub najbardziej niejasne w tej sesji?
+2. Momenty kiedy terapeuta mógł zareagować inaczej — co i dlaczego?
+3. Co wzbudziło w terapeucie silną reakcję emocjonalną (rezonans, dyskomfort, znudzenie)?
+4. Dylematy etyczne lub techniczne jeśli wystąpiły
+5. Pytania o klienta na które terapeuta nie zna odpowiedzi
+Pisz w języku polskim jako lista pytań/refleksji do przemyślenia, 200-300 słów.`
+  },
+  hipotezy: {
+    title: '💡 Hipotezy robocze',
+    prompt: `Na podstawie transkryptu sformułuj hipotezy robocze dotyczące klienta. Hipotezy to wstępne rozumienie — nie diagnoza, tylko kierunki myślenia:
+1. Co może leżeć u źródła zgłaszanych trudności (głębsze potrzeby, lęki, schematy)?
+2. Jakie wzorce relacyjne mogą się powtarzać w życiu klienta?
+3. Jakie przekonania o sobie / innych / świecie wydają się kluczowe?
+4. Co klient może nieświadomie "uzyskiwać" z obecnej sytuacji (funkcja symptomu)?
+5. Jaka może być główna oś pracy terapeutycznej z tym klientem?
+Pisz w języku polskim, hipotetycznie i otwarcie ("być może", "możliwe że"), 200-300 słów.`
+  },
+  eksploracja: {
+    title: '🗺 Co eksplorować w kolejnych sesjach',
+    prompt: `Na podstawie transkryptu tej sesji wskaż co warto pogłębić w kolejnych spotkaniach:
+1. Tematy które zostały tylko muśnięte i czekają na rozwinięcie
+2. Emocje które pojawiły się ale nie zostały w pełni przeżyte
+3. Pytania które warto zadać klientowi wprost
+4. Obszary życia klienta o których wiadomo mało
+5. Konkretne ćwiczenia, techniki lub zadania które mogłyby pomóc
+Pisz w języku polskim, praktycznie i konkretnie, 200-300 słów.`
+  }
+};
+
+async function doDeepAnalysis(lens, btn) {
+  if (!sessTx || !sessNotes) { toast('Najpierw wykonaj podstawową analizę', 'err'); return; }
+  if (!API_KEY) { toast('Brak klucza API', 'err'); return; }
+
+  // UI — mark active, disable all
+  document.querySelectorAll('.deep-btn').forEach(b => { b.classList.remove('active'); b.disabled = true; });
+  btn.classList.add('active');
+  btn.innerHTML = '<div class="spin dark" style="width:12px;height:12px;border-width:2px"></div> Analizuję…';
+
+  const lensData = DEEP_LENSES[lens];
+  const txClean = cleanTranscriptForAI(sessTx);
+  const context = `Transkrypt sesji:\n${txClean}\n\nPodstawowe notatki:\nTemat: ${sessNotes.temat_sesji||''}\nNastrój klienta: ${sessNotes.nastroj_klienta?.ocena||''}/10 — ${sessNotes.nastroj_klienta?.obserwacje||''}\nKluczowe wątki: ${(sessNotes.kluczowe_watki||[]).join(', ')}\nMechanizmy obronne: ${(sessNotes.mechanizmy_obronne||[]).join(', ')}\nPrzekonania rdzenne: ${(sessNotes.przekonania_rdzenne||[]).join(', ')}`;
+
+  try {
+    const result = await callAI(lensData.prompt, context);
+    sessDeepCache = {lens, title: lensData.title, text: result};
+    await saveNow(true); // persist cache immediately — don't wait for autosave
+
+    document.getElementById('deepResultTitle').textContent = lensData.title;
+    document.getElementById('deepResultText').textContent = result;
+    document.getElementById('deepResult').style.display = 'block';
+    document.getElementById('deepResult').scrollIntoView({behavior:'smooth', block:'start'});
+  } catch(e) {
+    toast('Błąd AI: ' + e.message.slice(0,50), 'err');
+    btn.classList.remove('active');
+  } finally {
+    // Restore all buttons using data-label (immune to innerHTML manipulation)
+    document.querySelectorAll('.deep-btn').forEach(b => {
+      b.disabled = false;
+      const label = b.dataset.label || b.textContent;
+      if (!b.classList.contains('active')) b.textContent = label;
+    });
+    // Restore the active button's label too
+    if (btn.dataset.label) btn.textContent = btn.dataset.label;
+  }
+}
+async function deleteClient(id) {
+  const c = DB.clients.find(x=>x.id===id); if(!c) return;
+  const sc = DB.sessions.filter(s=>s.client_id===id).length;
+  if (!confirm(`Usunąć klienta "${c.name}" i wszystkie jego sesje (${sc})?\n\nTej operacji nie można cofnąć.`)) return;
+  DB.clients = DB.clients.filter(x=>x.id!==id);
+  DB.sessions = DB.sessions.filter(s=>s.client_id!==id);
+  await saveDB();
+  if (SB) {
+    try {
+      const {error} = await SB.from('clients').delete().eq('id', id); // cascades to sessions
+      if (error) console.warn('Supabase deleteClient error:', error.message);
+    } catch(e) { console.warn('Supabase deleteClient failed:', e.message); }
+  }
+  toast('Klient usunięty', 'ok');
+  showPanel('home'); renderSidebar();
+}
+
+async function deleteSession(id, skipRender=false) {
+  const s = DB.sessions.find(x=>x.id===id); if(!s) return;
+  const d = new Date(s.date).toLocaleDateString('pl-PL',{day:'numeric',month:'long'});
+  if (!confirm(`Usunąć sesję z ${d}?\n\nTej operacji nie można cofnąć.`)) return;
+  DB.sessions = DB.sessions.filter(x=>x.id!==id);
+  await saveDB();
+  if (SB) {
+    try {
+      const {error} = await SB.from('sessions').delete().eq('id', id);
+      if (error) console.warn('Supabase deleteSession error:', error.message);
+    } catch(e) { console.warn('Supabase deleteSession failed:', e.message); }
+  }
+  toast('Sesja usunięta', 'ok');
+  if (!skipRender) renderClientDetail(); // called from client detail list view
+}
+
+function deleteSessionConfirm() {
+  if (!curSessId) return;
+  // skipRender=true — we'll navigate away and render there
+  deleteSession(curSessId, true).then(() => { showPanel('client'); renderClientDetail(); });
+}
+
+// ═══════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════
+function exportSession(id) {
+  const s = DB.sessions.find(x=>x.id===id);
+  if (!s) return; // session not found — abort (don't recurse)
+  const c = DB.clients.find(x=>x.id===s.client_id);
+  const date = new Date(s.date).toLocaleDateString('pl-PL',{day:'numeric',month:'long',year:'numeric'});
+
+  // Build TXT
+  let txt = `PSYCHNOTE AI — NOTATKI SESJI\n`;
+  txt += `${'='.repeat(40)}\n`;
+  txt += `Klient: ${c?.name || 'Nieznany'}\n`;
+  txt += `Data: ${date}\n`;
+  txt += `Czas trwania: ${s.duration_sec ? Math.round(s.duration_sec/60)+' min' : 'brak danych'}\n`;
+  txt += `${'='.repeat(40)}\n\n`;
+
+  if (s.transcript) {
+    txt += `TRANSKRYPT SESJI\n${'-'.repeat(30)}\n${s.transcript}\n\n`;
+  }
+
+  const n = s.notes;
+  if (n) {
+    txt += `NOTATKI KLINICZNE AI\n${'-'.repeat(30)}\n`;
+    if (n.temat_sesji) txt += `Temat sesji: ${n.temat_sesji}\n\n`;
+    if (n.nastroj_klienta) txt += `Nastrój klienta: ${n.nastroj_klienta.ocena}/10 — ${n.nastroj_klienta.obserwacje}\n\n`;
+    if (n.kluczowe_watki?.length) txt += `Kluczowe wątki:\n${n.kluczowe_watki.map(w=>`  • ${w}`).join('\n')}\n\n`;
+    if (n.mechanizmy_obronne?.length) txt += `Mechanizmy obronne:\n${n.mechanizmy_obronne.map(m=>`  • ${m}`).join('\n')}\n\n`;
+    if (n.przekonania_rdzenne?.length) txt += `Przekonania rdzenne:\n${n.przekonania_rdzenne.map(p=>`  • ${p}`).join('\n')}\n\n`;
+    if (n.zasoby_klienta?.length) txt += `Zasoby klienta:\n${n.zasoby_klienta.map(z=>`  • ${z}`).join('\n')}\n\n`;
+    if (n.interwencje_terapeutyczne?.length) txt += `Interwencje terapeutyczne:\n${n.interwencje_terapeutyczne.map(i=>`  • ${i}`).join('\n')}\n\n`;
+    if (n.zadania_domowe && n.zadania_domowe!=='null') txt += `Zadanie domowe: ${n.zadania_domowe}\n\n`;
+    if (n.cele_nastepnej_sesji?.length) txt += `Cele następnej sesji:\n${n.cele_nastepnej_sesji.map((c,i)=>`  ${i+1}. ${c}`).join('\n')}\n\n`;
+    if (n.notatki_kliniczne && n.notatki_kliniczne!=='null') txt += `Notatki kliniczne: ${n.notatki_kliniczne}\n\n`;
+  }
+
+  if (s.free_notes) txt += `WŁASNE NOTATKI\n${'-'.repeat(30)}\n${s.free_notes}\n\n`;
+  if (s.organized_notes) txt += `NOTATKI UPORZĄDKOWANE PRZEZ AI\n${'-'.repeat(30)}\n${s.organized_notes}\n\n`;
+
+  const safeName = (c?.name||'klient').replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ _-]/g, '_');
+  const safeDate = new Date(s.date).toISOString().slice(0,10);
+  const fmt2 = confirm('Eksportować jako TXT?\n\nOK = TXT (czytelny)\nAnuluj = JSON (surowe dane)');
+  if (fmt2) {
+    download(`sesja_${safeName}_${safeDate}.txt`, txt, 'text/plain');
+  } else {
+    download(`sesja_${safeName}_${safeDate}.json`, JSON.stringify(s,null,2), 'application/json');
+  }
+}
+
+function exportClient(id) {
+  const c = DB.clients.find(x=>x.id===id); if(!c) return;
+  const sessions = DB.sessions.filter(s=>s.client_id===id).sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  let txt = `PSYCHNOTE AI — KARTOTEKA KLIENTA\n`;
+  txt += `${'='.repeat(40)}\n`;
+  txt += `Klient: ${c.name}\n`;
+  if (c.age) txt += `Wiek: ${calcAge(c.age) || c.age} lat\n`;
+  if (c.issue) txt += `Problem: ${c.issue}\n`;
+  if (c.notes) txt += `Notatki ogólne: ${c.notes}\n`;
+  txt += `Liczba sesji: ${sessions.length}\n`;
+  txt += `${'='.repeat(40)}\n\n`;
+
+  sessions.forEach((s, i) => {
+    const d = new Date(s.date).toLocaleDateString('pl-PL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    txt += `SESJA ${i+1} — ${d}\n${'-'.repeat(35)}\n`;
+    if (s.duration_sec) txt += `Czas: ${Math.round(s.duration_sec/60)} min\n`;
+    if (s.mood) txt += `Nastrój: ${s.mood}/10\n`;
+    if (s.tags?.length) txt += `Tagi: ${s.tags.join(', ')}\n`;
+    const n = s.notes;
+    if (n?.temat_sesji) txt += `Temat: ${n.temat_sesji}\n`;
+    if (n?.nastroj_klienta) txt += `Nastrój AI: ${n.nastroj_klienta.ocena}/10 — ${n.nastroj_klienta.obserwacje}\n`;
+    if (n?.kluczowe_watki?.length) txt += `Wątki: ${n.kluczowe_watki.join(', ')}\n`;
+    if (n?.zadania_domowe && n.zadania_domowe!=='null') txt += `Zadanie: ${n.zadania_domowe}\n`;
+    if (n?.cele_nastepnej_sesji?.length) txt += `Cele: ${n.cele_nastepnej_sesji.join(', ')}\n`;
+    if (n?.notatki_kliniczne && n.notatki_kliniczne!=='null') txt += `Obs.: ${n.notatki_kliniczne}\n`;
+    if (s.free_notes) txt += `Notatki własne: ${s.free_notes.slice(0,200)}${s.free_notes.length>200?'…':''}\n`;
+    txt += '\n';
+  });
+
+  const safeName = c.name.replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ _-]/g, '_');
+  const fmt2 = confirm('Eksportować jako TXT?\n\nOK = TXT\nAnuluj = JSON (wszystkie dane)');
+  if (fmt2) {
+    download(`kartoteka_${safeName}.txt`, txt, 'text/plain');
+  } else {
+    download(`kartoteka_${safeName}.json`, JSON.stringify({client:c, sessions}, null, 2), 'application/json');
+  }
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a); // required for Firefox
+  a.click();
+  document.body.removeChild(a);
+  // Delay revoke — iOS Safari needs time to initiate the download
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast('Pobieranie: '+filename, 'ok');
+}
+// ═══════════════════════════════════════════════════
+// IMPORT FROM EXTENSION
+// ═══════════════════════════════════════════════════
+let importData = {tx: '', notes: null};
+
+function showImportBanner(tx, notes) {
+  importData = {tx, notes};
+  // Populate client dropdown
+  const sel = document.getElementById('importClientSel');
+  sel.innerHTML = DB.clients.length
+    ? DB.clients.map(c => `<option value="${c.id}">${esc(c.name)}${c.issue ? ' · '+esc(c.issue) : ''}</option>`).join('')
+    : '<option value="">— Brak klientów, dodaj najpierw —</option>';
+  // Preview first 200 chars
+  document.getElementById('importPreview').textContent = tx.slice(0, 200) + (tx.length > 200 ? '…' : '');
+  openOv('ov-import');
+}
+
+async function confirmImport() {
+  const sel = document.getElementById('importClientSel');
+  const clientId = sel.value;
+  if (!clientId) { toast('Najpierw dodaj klienta', 'err'); return; }
+  closeOv(null, 'ov-import');
+  // Create session with imported transcript
+  curClientId = clientId;
+  const data = {client_id: clientId, date: new Date().toISOString(), transcript: importData.tx, notes: importData.notes, free_notes: '', organized_notes: '', duration_sec: 0, mood: 5, tags: []};
+  let sess;
+  try { sess = await sbIns('sessions', data); }
+  catch(e) { sess = {id: uuid(), ...data, created_at: new Date().toISOString()}; }
+  DB.sessions.unshift(sess); curSessId = sess.id; await saveDB();
+  // Reset ALL session state — prevents leaking mood/tags/deepCache from previous session
+  sessTx = importData.tx; sessElapsed = 0;
+  sessNotes = importData.notes; sessFree = ''; sessOrg = '';
+  sessMood = 5; sessTags = []; sessDeepCache = null;
+  sessDirty = !!importData.tx; // imported text must be saved before leaving
+  initSessionUI();
+  showPanel('session');
+  toast('✅ Transkrypt zaimportowany!', 'ok');
+}
+// ═══════════════════════════════════════════════════
+// PRIVACY MODE & AGE
+// ═══════════════════════════════════════════════════
+let privacyOn = ls('pn_privacy') === '1';
+
+function togglePrivacy() {
+  privacyOn = !privacyOn;
+  ls('pn_privacy', privacyOn ? '1' : '0');
+  updatePrivacyBtn();
+  renderClients(); renderSidebar();
+  if (curClientId) renderClientDetail();
+  if (curPanel === 'home') renderHome(); // home dashboard shows client names too
+}
+
+function updatePrivacyBtn() {
+  const btn = document.getElementById('privacyBtn');
+  if (btn) { btn.textContent = privacyOn ? '🙈' : '👁'; btn.title = privacyOn ? 'Pokaż imiona' : 'Ukryj imiona'; }
+}
+
+function maskName(name) {
+  if (!privacyOn) return name;
+  const parts = name.trim().split(/\s+/);
+  return parts.map(p => p.charAt(0) + '●'.repeat(Math.min(p.length - 1, 4))).join(' ');
+}
+
+function calcAge(birthYear) {
+  if (!birthYear) return null;
+  // Assume born in July (middle of year) for year-only input
+  const now = new Date();
+  const age = now.getFullYear() - parseInt(birthYear);
+  // Subtract 1 if we haven't passed mid-July yet (conservative estimate)
+  return now.getMonth() < 6 ? age - 1 : age;
+}
+
+function ageStr(birthYear) {
+  const a = calcAge(birthYear);
+  return a ? a + ' lat' : '';
+}
+let ENC_KEY = null;
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const raw = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:100000, hash:'SHA-256'},
+    raw, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']
+  );
+}
+
+async function encryptStr(str) {
+  if (!ENC_KEY) return str;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM',iv}, ENC_KEY, new TextEncoder().encode(str));
+  const buf = new Uint8Array(12 + ct.byteLength);
+  buf.set(iv); buf.set(new Uint8Array(ct), 12);
+  // Chunked conversion avoids call stack overflow for large DBs (>64KB)
+  let binary = ''; const CHUNK = 8192;
+  for (let i = 0; i < buf.length; i += CHUNK) binary += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+  return 'ENC:' + btoa(binary);
+}
+
+async function decryptStr(str) {
+  if (!str || !str.startsWith('ENC:') || !ENC_KEY) return str;
+  try {
+    const buf = Uint8Array.from(atob(str.slice(4)), c => c.charCodeAt(0));
+    const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:buf.slice(0,12)}, ENC_KEY, buf.slice(12));
+    return new TextDecoder().decode(plain);
+  } catch { return str; }
+}
+
+async function setupEncryption() {
+  const p1 = document.getElementById('encPass').value;
+  const p2 = document.getElementById('encPass2').value;
+  if (p1.length < 8) { toast('Minimum 8 znaków', 'err'); return; }
+  if (p1 !== p2)     { toast('Hasła nie pasują', 'err'); return; }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  ENC_KEY = await deriveKey(p1, salt);
+  ls('pn_enc_salt', btoa(String.fromCharCode(...salt)));
+  ls('pn_enc', '1');
+  // Encrypt current DB and remove plain copy
+  const enc = await encryptStr(JSON.stringify(DB));
+  ls('pn_db_enc', enc);
+  ls('pn_db', null); // remove unencrypted copy
+  toast('🔒 Szyfrowanie włączone!', 'ok');
+  renderEncUI();
+}
+
+// ═══════════════════════════════════════════════════
+// LOCK SCREEN
+// ═══════════════════════════════════════════════════
+async function unlockApp() {
+  const pass = document.getElementById('lockPass').value;
+  const errEl = document.getElementById('lockErr');
+  const btn = document.getElementById('lockBtn');
+  if (!pass) { errEl.style.display='block'; errEl.textContent='❌ Wpisz hasło'; return; }
+
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Sprawdzam…';
+  errEl.style.display = 'none';
+
+  const saltB = ls('pn_enc_salt');
+  const salt = Uint8Array.from(atob(saltB), c => c.charCodeAt(0));
+  try {
+    const testKey = await deriveKey(pass, salt);
+    // Verify password by trying to decrypt
+    const enc = ls('pn_db_enc');
+    if (!enc || !enc.startsWith('ENC:')) {
+      // No encrypted data found — show specific error, not "wrong password"
+      errEl.style.display = 'block';
+      errEl.textContent = '⚠️ Zaszyfrowane dane nie istnieją lub są uszkodzone. Użyj opcji "wyczyść dane" poniżej.';
+      btn.disabled = false; btn.innerHTML = '🔓 Odblokuj';
+      return;
+    }
+    const buf = Uint8Array.from(atob(enc.slice(4)), c => c.charCodeAt(0));
+    // This throws if password is wrong — that's how we verify
+    await crypto.subtle.decrypt({name:'AES-GCM', iv:buf.slice(0,12)}, testKey, buf.slice(12));
+    // Password correct
+    ENC_KEY = testKey;
+    const d = await decryptStr(enc); if(d) DB = JSON.parse(d);
+    document.getElementById('lockPass').value = '';
+    bootAfterUnlock();
+  } catch {
+    errEl.style.display = 'block';
+    errEl.textContent = '❌ Błędne hasło — spróbuj ponownie';
+    btn.disabled = false; btn.innerHTML = '🔓 Odblokuj';
+    document.getElementById('lockPass').select();
+  }
+}
+
+function forgotPassword() {
+  if (!confirm('Wyczyścić WSZYSTKIE dane?\n\nTej operacji nie można cofnąć. Dane klientów zostaną trwale usunięte.')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+async function loadEncryption() {
+  // Called on boot — if encryption enabled, show lock screen and STOP
+  if (!ls('pn_enc')) return; // no encryption, continue normally
+  showView('v-lock');
+  document.getElementById('lockPass').focus();
+  // Return a Promise that never resolves — boot stops here until unlockApp() calls bootAfterUnlock()
+  return new Promise(() => {});
+}
+
+async function bootAfterUnlock() {
+  API_KEY = ls('pn_api') || '';
+  const su = ls('pn_su'), sk = ls('pn_sk');
+  if (su && sk) await initSupa(su, sk, false);
+  checkDriveToken();
+  if (API_KEY) {
+    showApp();
+    renderEncUI();
+    autoBackup();
+    handleExtensionImport();
+  } else {
+    showView('v-setup');
+  }
+}
+
+async function disableEncryption() {
+  if (!confirm('Wyłączyć szyfrowanie? Dane będą przechowywane bez ochrony.')) return;
+  // Save decrypted DB to plain pn_db BEFORE clearing enc keys
+  const plain = JSON.stringify(DB);
+  ls('pn_db', plain);
+  // Now safe to clear encryption
+  ENC_KEY = null;
+  ls('pn_enc', null);
+  ls('pn_enc_salt', null);
+  ls('pn_db_enc', null);
+  toast('🔓 Szyfrowanie wyłączone', 'ok');
+  renderEncUI();
+}
+
+function renderEncUI() {
+  const on = !!ls('pn_enc');
+  const setupEl  = document.getElementById('encSetup');
+  const activeEl = document.getElementById('encActive');
+  const statEl   = document.getElementById('encStatus');
+  if (!setupEl) return;
+  setupEl.style.display  = on ? 'none'  : 'block';
+  activeEl.style.display = on ? 'block' : 'none';
+  if (statEl) statEl.innerHTML = on
+    ? ''
+    : '<div style="font-size:12px;color:var(--live);padding:8px 10px;background:#fef0f0;border-radius:8px;margin-bottom:10px;border-left:2px solid var(--live)">⚠️ Dane niezaszyfrowane — wymagane przez RODO</div>';
+}
+
+// ═══════════════════════════════════════════════════
+// GOOGLE DRIVE BACKUP — Google Identity Services (GIS)
+// Popup flow: nie przeładowuje strony, token odnawiany cicho w tle
+// W Google Console: tylko "JavaScript origins" — ZERO redirect URIs
+// ═══════════════════════════════════════════════════
+let driveToken = null;
+let driveTokenExp = 0;
+let _gisClient = null;  // GIS token client (singleton)
+let _gisResolve = null; // pending auth promise resolver
+
+// Ładuje GIS library (lazy, jednorazowo, deduplication)
+let _gisLibPromise = null;
+function loadGIS() {
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
+  if (_gisLibPromise) return _gisLibPromise;
+  _gisLibPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = resolve;
+    s.onerror = () => { _gisLibPromise = null; reject(new Error('Nie można załadować Google Identity Services')); };
+    document.head.appendChild(s);
+  });
+  return _gisLibPromise;
+}
+
+// Inicjalizuje lub zwraca GIS token client
+async function getGISClient() {
+  await loadGIS();
+  const cid = ls('pn_gcid');
+  if (!cid) throw new Error('Brak Google Client ID');
+  if (_gisClient) return _gisClient;
+  _gisClient = google.accounts.oauth2.initTokenClient({
+    client_id: cid,
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    callback: (resp) => {
+      if (resp.error) {
+        if (_gisResolve) { _gisResolve({ok:false, err:resp.error}); _gisResolve=null; }
+        return;
+      }
+      driveToken = resp.access_token;
+      driveTokenExp = Date.now() + (parseInt(resp.expires_in)||3600)*1000;
+      ls('pn_gtok', driveToken);
+      ls('pn_gtok_exp', String(driveTokenExp));
+      if (_gisResolve) { _gisResolve({ok:true}); _gisResolve=null; }
+    }
+  });
+  return _gisClient;
+}
+
+// Autoryzuj — otwiera popup (nie przeładowuje strony)
+async function driveAuth() {
+  const input = document.getElementById('gcid');
+  const cid = (input?.value?.trim()) || ls('pn_gcid');
+  if (!cid) { toast('Wpisz najpierw Google Client ID', 'err'); input?.focus(); return; }
+  ls('pn_gcid', cid);
+  syncCredsToSupa(); // zapisz Google CID do Supabase
+  _gisClient = null; // reset — nowe Client ID
+  try {
+    const client = await getGISClient();
+    await new Promise((resolve) => {
+      _gisResolve = resolve;
+      client.requestAccessToken({prompt:'select_account'});
+    }).then(res => {
+      if (!res.ok) throw new Error('Autoryzacja anulowana lub błąd: ' + res.err);
+    });
+    updateDriveUI();
+    toast('✅ Połączono z Google Drive!', 'ok');
+    driveBackup(); // backup od razu po pierwszym połączeniu
+  } catch(e) {
+    toast('Błąd autoryzacji: ' + e.message.slice(0,60), 'err');
+  }
+}
+
+// Cichy refresh tokenu — bez UI, bez pytania użytkownika
+// GIS wysyła request przez ukryty iframe jeśli użytkownik jest zalogowany w Google
+async function silentRefreshToken() {
+  try {
+    const client = await getGISClient();
+    await new Promise((resolve, reject) => {
+      _gisResolve = resolve;
+      // prompt:'' = cichy refresh (bez popup/przekierowania)
+      client.requestAccessToken({prompt:''});
+      // Jeśli silent refresh nie uda się w 8s — odrzuć
+      setTimeout(() => {
+        if (_gisResolve) { _gisResolve = null; reject(new Error('silent_timeout')); }
+      }, 8000);
+    }).then(res => {
+      if (!res.ok) throw new Error(res.err);
+    });
+    return true;
+  } catch(e) {
+    return false; // silent refresh failed — user needs to re-auth
+  }
+}
+
+// Sprawdza token przy starcie (nie ma już hash z redirect)
+function checkDriveToken() {
+  const tok = ls('pn_gtok');
+  const exp = parseInt(ls('pn_gtok_exp')||'0');
+  if (tok && Date.now() < exp - 60000) { // 60s margines
+    driveToken = tok;
+    driveTokenExp = exp;
+  } else if (tok) {
+    // Token istnieje ale wygasł — czyść, spróbujemy silent refresh przy backupie
+    driveToken = null;
+    driveTokenExp = 0;
+  }
+  updateDriveUI();
+}
+
+// Upewnij się że mamy ważny token — cichy refresh jeśli wygasł
+async function ensureValidToken() {
+  const MARGIN = 5 * 60 * 1000; // odnów 5min przed wygaśnięciem
+  if (driveToken && Date.now() < driveTokenExp - MARGIN) return true; // token OK
+  if (!ls('pn_gcid')) return false; // brak Client ID
+  toast('🔄 Odnawianie sesji Google…', 'ok');
+  const ok = await silentRefreshToken();
+  if (!ok) {
+    toast('⚠️ Sesja Google wygasła — naciśnij "Autoryzuj Google" w Ustawieniach', 'err');
+    driveToken = null;
+    updateDriveUI();
+    return false;
+  }
+  updateDriveUI();
+  return true;
+}
+
+function updateDriveUI() {
+  const btn  = document.getElementById('driveBackupBtn');
+  const stat = document.getElementById('driveStatusEl');
+  const last = document.getElementById('driveLastEl');
+  const cid  = document.getElementById('gcid');
+  if (cid && ls('pn_gcid')) cid.value = ls('pn_gcid');
+  const hasToken = !!(driveToken && Date.now() < driveTokenExp);
+  const hasCid = !!ls('pn_gcid');
+  if (stat) {
+    stat.textContent = hasToken ? '✅ Połączono z Google Drive' : hasCid ? '🔄 Token wygasł — zostanie odnowiony automatycznie' : 'Nie połączono';
+    stat.style.color = hasToken ? 'var(--green)' : 'var(--muted)';
+  }
+  if (btn) btn.disabled = !hasCid; // przycisk aktywny jeśli Client ID jest — token odnowi się automatycznie
+  const l = ls('pn_drive_last');
+  if (last) last.textContent = l ? new Date(parseInt(l)).toLocaleDateString('pl-PL',{day:'numeric',month:'long',year:'numeric'}) : '—';
+}
+
+async function driveBackup() {
+  if (!ls('pn_gcid')) { toast('Najpierw skonfiguruj Google Drive w Ustawieniach', 'err'); return; }
+  const tokenOk = await ensureValidToken();
+  if (!tokenOk) return; // toast już pokazany przez ensureValidToken
+  const btn = document.getElementById('driveBackupBtn');
+  if (btn) { btn.disabled=true; btn.textContent='Wysyłam…'; }
+  const ctrl = new AbortController();
+  const timeoutId = setTimeout(() => ctrl.abort(), 45000); // 45s timeout for large backups
+  try {
+    // Build payload — strip deep_cache (local-only, but keep in backup for restore)
+    const payload = JSON.stringify({
+      version: 2,
+      date: new Date().toISOString(),
+      clients: DB.clients,
+      sessions: DB.sessions // deep_cache included — it's local data worth preserving
+    }, null, 2);
+    const sizeKb = Math.round(payload.length / 1024);
+    if (sizeKb > 4500) {
+      toast(`⚠️ Backup duży (${sizeKb}KB) — może potrwać dłużej`, 'ok');
+    }
+    const name = `psychnote-backup-${new Date().toISOString().slice(0,10)}.json`;
+    // Find existing file
+    const search = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${name}'+and+trashed=false&fields=files(id)`,
+      {headers:{Authorization:`Bearer ${driveToken}`}, signal: ctrl.signal}
+    );
+    if (!search.ok) {
+      if (search.status === 401) { driveToken=null; ls('pn_gtok',null); updateDriveUI(); throw new Error('Sesja wygasła — połącz ponownie w Ustawieniach'); }
+      throw new Error(`Błąd autoryzacji (${search.status})`);
+    }
+    const {files} = await search.json();
+    const existId = files?.[0]?.id;
+    // Upload (multipart)
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({name, mimeType:'application/json'})], {type:'application/json'}));
+    form.append('file',     new Blob([payload], {type:'application/json'}));
+    const url = existId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${existId}?uploadType=multipart`
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    const res = await fetch(url, {
+      method: existId ? 'PATCH' : 'POST',
+      headers: {Authorization:`Bearer ${driveToken}`},
+      body: form,
+      signal: ctrl.signal
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(()=>({}));
+      if (e.error?.code===401 || res.status===401) { driveToken=null; ls('pn_gtok',null); updateDriveUI(); throw new Error('Sesja wygasła — połącz ponownie'); }
+      throw new Error(e.error?.message || `HTTP ${res.status}`);
+    }
+    ls('pn_drive_last', String(Date.now()));
+    toast(`✅ Backup (${sizeKb}KB) zapisany na Drive!`, 'ok');
+    updateDriveUI();
+  } catch(e) {
+    if (e.name === 'AbortError') toast('⏱ Backup przekroczył limit czasu (45s) — sprawdź połączenie', 'err');
+    else toast('Błąd backup: ' + e.message.slice(0,60), 'err');
+  } finally {
+    clearTimeout(timeoutId);
+    if(btn){btn.disabled=false; btn.textContent='☁️ Backup teraz';}
+  }
+}
+
+async function autoBackup() {
+  if (!ls('pn_gcid')) return; // Drive nigdy nie było skonfigurowane
+  const last = parseInt(ls('pn_drive_last')||'0');
+  if (Date.now() - last < 7*24*60*60*1000) return; // backup aktualny
+  // Backup zaległy — spróbuj cicho odświeżyć token i zrób backup
+  await driveBackup(); // ensureValidToken() wewnątrz zadba o token
+}
+
+// ── RESTORE FROM BACKUP ───────────────────────────
+async function restoreFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.clients) || !Array.isArray(data.sessions)) {
+        toast('Nieprawidłowy plik backup — brak klientów lub sesji', 'err'); return;
+      }
+      // Validate individual records
+      const validClients = data.clients.filter(c => c && typeof c === 'object' && c.id && c.name);
+      const validSessions = data.sessions.filter(s => s && typeof s === 'object' && s.id && s.client_id);
+      if (validClients.length !== data.clients.length || validSessions.length !== data.sessions.length) {
+        const skip = (data.clients.length - validClients.length) + (data.sessions.length - validSessions.length);
+        if (!confirm('Plik backup zawiera ' + skip + ' uszkodzonych rekordów które zostaną pominięte.\n\nCzy kontynuować?')) { input.value = ''; return; }
+        data.clients = validClients;
+        data.sessions = validSessions;
+      }
+      const date = data.date ? new Date(data.date).toLocaleDateString('pl-PL',{day:'numeric',month:'long',year:'numeric'}) : 'nieznana';
+      const c = data.clients.length, s = data.sessions.length;
+      if (!confirm(`Przywrócić backup z ${date}?\n\n${c} klientów, ${s} sesji\n\nAktualne dane zostaną zastąpione. Tej operacji nie można cofnąć.`)) {
+        input.value = ''; return;
+      }
+      DB.clients = data.clients;
+      DB.sessions = data.sessions;
+      await saveDB();
+      // Sync to Supabase if connected
+      if (SB) {
+        toast('Synchronizuję z Supabase…', 'ok');
+        let syncErrors = 0;
+        for (const cl of DB.clients) {
+          try { await SB.from('clients').upsert(cl); }
+          catch(err) { syncErrors++; console.warn('Upsert client failed:', cl.id, err.message); }
+        }
+        for (const s of DB.sessions) {
+          try { const {deep_cache:_, ...supaS} = s; await SB.from('sessions').upsert(supaS); }
+          catch(err) { syncErrors++; console.warn('Upsert session failed:', s.id, err.message); }
+        }
+        if (syncErrors > 0) toast(`⚠️ ${syncErrors} rekordów nie zsynchronizowano z Supabase (sprawdź konsolę)`, 'err');
+      }
+      input.value = '';
+      toast(`✅ Przywrócono ${c} klientów i ${s} sesji!`, 'ok');
+      renderSidebar();
+      showPanel('home');
+    } catch(err) {
+      toast('Błąd odczytu pliku: ' + err.message.slice(0,40), 'err');
+      input.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function applyTheme(dark) {
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = dark ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#1C2A1E' : '#3D6642';
+}
+function toggleTheme() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  ls('pn_theme', isDark ? 'light' : 'dark');
+  applyTheme(!isDark);
+}
+
+function openOv(id) { document.getElementById(id).classList.add('on'); }
+function closeOv(e, id) {
+  if (e && e.target !== e.currentTarget) return;
+  if (id) document.getElementById(id).classList.remove('on');
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════
+function clearData() {
+  if (!confirm('Usunąć wszystkie dane lokalne?\nDane w Supabase zostaną zachowane.\nPoświadczenia (API, Supabase, Google) zostają.')) return;
+  const keep = ['pn_api','pn_su','pn_sk','pn_gcid','pn_gtok','pn_gtok_exp','pn_theme','pn_privacy'];
+  const saved = {};
+  keep.forEach(k => { const v = localStorage.getItem(k); if(v) saved[k]=v; });
+  localStorage.clear();
+  Object.entries(saved).forEach(([k,v]) => localStorage.setItem(k,v));
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function esc(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function arr(a){return Array.isArray(a)&&a.length>0}
+function uuid(){if(crypto.randomUUID)return crypto.randomUUID();const b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=(b[6]&0x0f)|0x40;b[8]=(b[8]&0x3f)|0x80;return [...b].map((v,i)=>(([4,6,8,10].includes(i)?'-':'')+v.toString(16).padStart(2,'0'))).join('');}
+function initials(name){return (name||'?').trim().split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?'}
+
+let toastT;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${type} show`;
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+
+// Zapisz dane przed zamknięciem zakładki (zapobiega utracie ostatnich ~20s)
+window.addEventListener('beforeunload', (e) => {
+  if (isLive || sessDirty) {
+    saveNow(true); // fire-and-forget — przeglądarka może nie poczekać ale zwiększa szanse
+    if (isLive) {
+      // Standardowy komunikat o niezapisanych danych
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  }
+});
+
+// Odnów Wake Lock po powrocie do zakładki (system zwalnia go gdy zakładka jest ukryta)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && isLive && !wakeLock && 'wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch {}
+  }
+});
+</script>
+</body>
+</html>
